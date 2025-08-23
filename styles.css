@@ -1,0 +1,36 @@
+.layout-tooltip {
+  position: fixed;
+  background: #2c3e50;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  z-index: 999999;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  user-select: none;
+  border: 2px solid #3498db;
+  transition: all 0.2s ease;
+  max-width: 200px;
+  text-align: center;
+}
+
+.layout-tooltip:hover {
+  background: #34495e;
+  transform: scale(1.05);
+  border-color: #2980b9;
+}
+
+.layout-tooltip:active {
+  transform: scale(0.95);
+  background: #1abc9c;
+}
+
+/* Highlight for input elements */
+input.layout-highlight, 
+textarea.layout-highlight {
+  background-color: #fff3cd !important;
+  border: 2px solid #ffc107 !important;
+  transition: all 0.2s ease;
+}
