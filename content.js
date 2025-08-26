@@ -7,6 +7,7 @@ class LayoutDetector {
     this.isTooltipHovered = false;
     this.replacedWords = new Set();
     this.wordPosition = null; // Store word position
+    this.hoverReplaceTimeout = null; // Timer for hover-to-replace
     this.init();
   }
 
@@ -21,20 +22,25 @@ class LayoutDetector {
     this.tooltip.className = 'layout-tooltip';
     this.tooltip.style.display = 'none';
 
-    this.tooltip.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.replaceWord();
-    });
-
     this.tooltip.addEventListener('mouseenter', () => {
       this.isTooltipHovered = true;
       this.clearHideTimeout();
+      
+      // Start hover-to-replace timer
+      this.hoverReplaceTimeout = setTimeout(() => {
+        this.replaceWord();
+      }, 1000); // Replace after 1 second of hovering
     });
 
     this.tooltip.addEventListener('mouseleave', () => {
       this.isTooltipHovered = false;
       this.scheduleHide();
+      
+      // Clear hover-to-replace timer
+      if (this.hoverReplaceTimeout) {
+        clearTimeout(this.hoverReplaceTimeout);
+        this.hoverReplaceTimeout = null;
+      }
     });
 
     document.body.appendChild(this.tooltip);
@@ -151,7 +157,7 @@ class LayoutDetector {
       if (!this.isTooltipHovered) {
         this.hideTooltip();
       }
-    }, 300);
+    }, 50); // Reduced from 300ms to 50ms for faster transitions
   }
 
   handleMouseMove(event) {
@@ -199,7 +205,7 @@ class LayoutDetector {
   }
 
   showTooltipAboveWord(text, wordPos) {
-    this.tooltip.textContent = `Click to change to: ${text}`;
+    this.tooltip.textContent = `Hover to change to: ${text}`;
     this.tooltip.style.display = 'block';
 
     // FIXED: Position tooltip right above the word
@@ -218,6 +224,12 @@ class LayoutDetector {
     this.isTooltipHovered = false;
     this.wordPosition = null;
     this.clearHideTimeout();
+    
+    // Clear hover-to-replace timer
+    if (this.hoverReplaceTimeout) {
+      clearTimeout(this.hoverReplaceTimeout);
+      this.hoverReplaceTimeout = null;
+    }
   }
 
   replaceWord() {
@@ -238,7 +250,7 @@ class LayoutDetector {
       element.focus();
       element.setSelectionRange(wordData.start + wordData.converted.length,
         wordData.start + wordData.converted.length);
-    } else if (element.textContent !== undefined) {
+    } else if (element.textContent !== undefined) { //
       const text = element.textContent;
       const newText = text.substring(0, wordData.start) +
         wordData.converted +
@@ -261,3 +273,5 @@ class LayoutDetector {
 
 // Start the extension
 new LayoutDetector();
+
+//version 2
