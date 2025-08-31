@@ -1,38 +1,7 @@
-// Load libraries dynamically with fallback
-const loadLibraries = () => {
-  return new Promise((resolve) => {
-    let loadedCount = 0;
-    const totalLibraries = 2;
-    
-    const checkComplete = () => {
-      loadedCount++;
-      if (loadedCount >= totalLibraries) {
-        resolve();
-      }
-    };
-    
-    // Load Anime.js for smooth animations
-    if (!window.anime) {
-      const animeScript = document.createElement('script');
-      animeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js';
-      animeScript.onload = checkComplete;
-      animeScript.onerror = checkComplete; // Continue even if fails
-      document.head.appendChild(animeScript);
-    } else {
-      checkComplete();
-    }
-
-    // Load Floating UI for perfect positioning
-    if (!window.FloatingUIDOM) {
-      const floatingScript = document.createElement('script');
-      floatingScript.src = 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.5.3/dist/floating-ui.dom.umd.min.js';
-      floatingScript.onload = checkComplete;
-      floatingScript.onerror = checkComplete; // Continue even if fails
-      document.head.appendChild(floatingScript);
-    } else {
-      checkComplete();
-    }
-  });
+// Initialize the detector without loading external libraries
+const initializeDetector = () => {
+  console.log('🚀 Modern Layout Detector starting...');
+  new ModernLayoutDetector();
 };
 
 class ModernLayoutDetector {
@@ -55,7 +24,7 @@ class ModernLayoutDetector {
   }
 
   async init() {
-    await loadLibraries();
+    // Initialize without external libraries
     
     // Load pause setting from chrome.storage
     if (window.chrome && chrome.storage && chrome.storage.sync) {
@@ -96,7 +65,7 @@ class ModernLayoutDetector {
     
     this.createUndoButton();
     document.addEventListener('keydown', this.handleKeydown.bind(this));
-    console.log('🚀 Modern Layout Detector loaded with libraries!');
+    console.log('🚀 Modern Layout Detector loaded!');
   }
 
   // Fix current word at cursor position
@@ -170,52 +139,26 @@ class ModernLayoutDetector {
     
     document.body.appendChild(notification);
     
-    // Smooth notification animation with Anime.js or fallback
-    if (window.anime) {
-      anime({
-        targets: notification,
-        opacity: [0, 1],
-        translateY: [-20, 0],
-        duration: 400,
-        easing: 'easeOutBack'
-      });
-      
-      // Auto-hide with smooth animation
-      setTimeout(() => {
-        anime({
-          targets: notification,
-          opacity: 0,
-          translateY: -20,
-          duration: 300,
-          easing: 'easeInCubic',
-          complete: () => {
-            if (document.body.contains(notification)) {
-              document.body.removeChild(notification);
-            }
-          }
-        });
-      }, 3000);
-    } else {
-      // Fallback CSS animation
+    // Pure CSS notification animation
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateY(-20px)';
+    notification.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    
+    setTimeout(() => {
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Auto-hide with smooth animation
+    setTimeout(() => {
       notification.style.opacity = '0';
       notification.style.transform = 'translateY(-20px)';
-      notification.style.transition = 'all 0.4s ease';
-      
       setTimeout(() => {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translateY(0)';
-      }, 100);
-      
-      setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateY(-20px)';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-          }
-        }, 300);
-      }, 3000);
-    }
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
   }
 
   shouldAutoCorrectSingleChar(char, isArabic) {
@@ -290,18 +233,9 @@ class ModernLayoutDetector {
     const progressBar = this.createEpicScanProgressBar();
     const scanLine = this.createEpicScanLine(element);
     
-    // Epic progress bar animation
-    if (window.anime) {
-      anime({
-        targets: progressBar,
-        width: '100%',
-        duration: 2000,
-        easing: 'easeInOutQuad'
-      });
-    } else {
-      progressBar.style.transition = 'width 2s ease-in-out';
-      progressBar.style.width = '100%';
-    }
+    // Epic progress bar animation with pure CSS
+    progressBar.style.transition = 'width 2s ease-in-out';
+    progressBar.style.width = '100%';
     
     // Epic scan line animation
     const rect = element.getBoundingClientRect();
@@ -310,19 +244,9 @@ class ModernLayoutDetector {
     const paddingRight = parseInt(style.paddingRight) || 0;
     const textAreaWidth = rect.width - paddingLeft - paddingRight;
     
-    if (window.anime) {
-      anime({
-        targets: scanLine,
-        translateX: textAreaWidth,
-        opacity: [0, 1, 1, 0],
-        duration: 2000,
-        easing: 'easeInOutQuad'
-      });
-    } else {
-      scanLine.style.transition = 'transform 2s ease-in-out, opacity 2s ease-in-out';
-      scanLine.style.opacity = '1';
-      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
-    }
+    scanLine.style.transition = 'transform 2s ease-in-out, opacity 2s ease-in-out';
+    scanLine.style.opacity = '1';
+    scanLine.style.transform = `translateX(${textAreaWidth}px)`;
     
     // Wait for scan animation to complete
     await this.delay(2200);
@@ -592,38 +516,16 @@ class ModernLayoutDetector {
       const wordData = wrongWords[i];
       
       if (wordData.highlightElement) {
-        if (window.anime) {
-          // Correction pulse animation
-          anime({
-            targets: wordData.highlightElement,
-            scale: [1, 1.3, 1],
-            duration: 400,
-            easing: 'easeInOutQuad'
-          });
-          
-          await this.delay(200);
-          
-          // Success transformation
-          anime({
-            targets: wordData.highlightElement,
-            backgroundColor: [
-              wordData.isArabic ? '#ff6b6b' : '#667eea',
-              '#2ed573'
-            ],
-            scale: [1, 1.2, 1],
-            duration: 500,
-            easing: 'easeOutElastic(1, .6)'
-          });
-        } else {
-          // Fallback animation
-          wordData.highlightElement.style.transition = 'all 0.4s ease';
-          wordData.highlightElement.style.transform = 'scale(1.3)';
-          
-          setTimeout(() => {
-            wordData.highlightElement.style.backgroundColor = '#2ed573';
-            wordData.highlightElement.style.transform = 'scale(1)';
-          }, 200);
-        }
+        // Pure CSS correction pulse animation
+        wordData.highlightElement.style.transition = 'all 0.4s ease';
+        wordData.highlightElement.style.transform = 'scale(1.3)';
+        
+        await this.delay(200);
+        
+        // Success transformation
+        wordData.highlightElement.style.transition = 'all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        wordData.highlightElement.style.backgroundColor = '#2ed573';
+        wordData.highlightElement.style.transform = 'scale(1)';
         
         await this.delay(300);
       }
@@ -648,54 +550,32 @@ class ModernLayoutDetector {
       timestamp: Date.now()
     });
     
-    // Epic cleanup animation
-    if (window.anime) {
-      anime({
-        targets: wrongWords.map(w => w.highlightElement).filter(Boolean),
-        opacity: 0,
-        scale: 0.5,
-        duration: 600,
-        delay: anime.stagger(100),
-        easing: 'easeInBack',
-        complete: () => {
-          wrongWords.forEach(wordData => {
-            if (wordData.highlightElement && document.body.contains(wordData.highlightElement)) {
-              document.body.removeChild(wordData.highlightElement);
-            }
-            if (wordData.previewElement && document.body.contains(wordData.previewElement)) {
-              document.body.removeChild(wordData.previewElement);
-            }
-          });
+    // Epic cleanup animation with pure CSS
+    wrongWords.forEach((wordData, i) => {
+      setTimeout(() => {
+        if (wordData.highlightElement) {
+          wordData.highlightElement.style.transition = 'all 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
+          wordData.highlightElement.style.opacity = '0';
+          wordData.highlightElement.style.transform = 'scale(0.5)';
+        }
+        if (wordData.previewElement) {
+          wordData.previewElement.style.transition = 'all 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
+          wordData.previewElement.style.opacity = '0';
+          wordData.previewElement.style.transform = 'scale(0.5)';
+        }
+      }, i * 100);
+    });
+    
+    setTimeout(() => {
+      wrongWords.forEach(wordData => {
+        if (wordData.highlightElement && document.body.contains(wordData.highlightElement)) {
+          document.body.removeChild(wordData.highlightElement);
+        }
+        if (wordData.previewElement && document.body.contains(wordData.previewElement)) {
+          document.body.removeChild(wordData.previewElement);
         }
       });
-    } else {
-      // Fallback cleanup
-      wrongWords.forEach((wordData, i) => {
-        setTimeout(() => {
-          if (wordData.highlightElement) {
-            wordData.highlightElement.style.transition = 'all 0.6s ease';
-            wordData.highlightElement.style.opacity = '0';
-            wordData.highlightElement.style.transform = 'scale(0.5)';
-          }
-          if (wordData.previewElement) {
-            wordData.previewElement.style.transition = 'all 0.6s ease';
-            wordData.previewElement.style.opacity = '0';
-            wordData.previewElement.style.transform = 'scale(0.5)';
-          }
-        }, i * 100);
-      });
-      
-      setTimeout(() => {
-        wrongWords.forEach(wordData => {
-          if (wordData.highlightElement && document.body.contains(wordData.highlightElement)) {
-            document.body.removeChild(wordData.highlightElement);
-          }
-          if (wordData.previewElement && document.body.contains(wordData.previewElement)) {
-            document.body.removeChild(wordData.previewElement);
-          }
-        });
-      }, 1000);
-    }
+    }, 1000);
     
     // Epic success notification
     const count = wrongWords.length;
@@ -725,50 +605,26 @@ class ModernLayoutDetector {
   showEpicUndoButton() {
     this.undoButton.style.display = 'block';
     
-    if (window.anime) {
-      // Epic undo button entrance
-      anime({
-        targets: this.undoButton,
-        opacity: [0, 1],
-        scale: [0.5, 1.2, 1],
-        rotate: [0, 360],
-        duration: 800,
-        easing: 'easeOutElastic(1, .8)'
-      });
-      
-      // Auto-hide with epic animation
-      setTimeout(() => {
-        anime({
-          targets: this.undoButton,
-          opacity: 0,
-          scale: 0.5,
-          rotate: -180,
-          duration: 600,
-          easing: 'easeInBack',
-          complete: () => {
-            this.undoButton.style.display = 'none';
-          }
-        });
-      }, 10000);
-    } else {
-      // Fallback animation
+    // Epic undo button entrance with pure CSS
+    this.undoButton.style.opacity = '0';
+    this.undoButton.style.transform = 'scale(0.5) rotate(0deg)';
+    this.undoButton.style.transition = 'all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+    
+    setTimeout(() => {
+      this.undoButton.style.opacity = '1';
+      this.undoButton.style.transform = 'scale(1) rotate(360deg)';
+    }, 100);
+    
+    // Auto-hide with epic animation
+    setTimeout(() => {
+      this.undoButton.style.transition = 'all 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
       this.undoButton.style.opacity = '0';
-      this.undoButton.style.transform = 'scale(0.5)';
-      this.undoButton.style.transition = 'all 0.8s ease';
-      
+      this.undoButton.style.transform = 'scale(0.5) rotate(-180deg)';
       setTimeout(() => {
-        this.undoButton.style.opacity = '1';
-        this.undoButton.style.transform = 'scale(1)';
-      }, 100);
-      
-      setTimeout(() => {
-        this.undoButton.style.opacity = '0';
-        this.undoButton.style.transform = 'scale(0.5)';
-        setTimeout(() => {
-          this.undoButton.style.display = 'none';
-        }, 600);
-      }, 10000);
-    }
+        this.undoButton.style.display = 'none';
+        this.undoButton.style.transform = 'scale(1) rotate(0deg)';
+      }, 600);
+    }, 10000);
   }
 
   delay(ms) {
@@ -882,6 +738,8 @@ class ModernLayoutDetector {
     
     // Position above the text area, not above the words
     const elementRect = element.getBoundingClientRect();
+    const text = element.value || element.textContent || '';
+    const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
     
     if (isRTL) {
       unifiedLabel.style.left = (elementRect.right - 20) + 'px';
@@ -898,64 +756,32 @@ class ModernLayoutDetector {
 
   // 🎆 Animate single word highlight
   animateSingleHighlight(highlight, preview) {
-    if (window.anime) {
-      anime({
-        targets: highlight,
-        opacity: [0, 1],
-        scale: [0.5, 1.1, 1],
-        duration: 600,
-        easing: 'easeOutElastic(1, .8)',
-        complete: () => highlight.classList.add('detected')
-      });
-      
-      anime({
-        targets: preview,
-        opacity: [0, 1],
-        scale: [0.5, 1],
-        duration: 400,
-        delay: 300,
-        easing: 'easeOutBack'
-      });
-    } else {
-      highlight.style.transition = 'all 0.6s ease';
-      highlight.style.opacity = '1';
-      highlight.style.transform = 'scale(1)';
-      preview.style.transition = 'all 0.4s ease';
+    // Pure CSS animation without Anime.js
+    highlight.style.transition = 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+    highlight.style.opacity = '1';
+    highlight.style.transform = 'scale(1)';
+    highlight.classList.add('detected');
+    
+    setTimeout(() => {
+      preview.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
       preview.style.opacity = '1';
       preview.style.transform = preview.style.transform.replace('scale(0.5)', 'scale(1)');
-    }
+    }, 300);
   }
 
   // 🎆 Animate unified highlight with EPIC effects
   animateUnifiedHighlight(unifiedBox, unifiedLabel) {
-    if (window.anime) {
-      anime({
-        targets: unifiedBox,
-        opacity: [0, 1],
-        scale: [0.3, 1.2, 1],
-        duration: 800,
-        easing: 'easeOutElastic(1, .6)',
-        complete: () => unifiedBox.classList.add('detected')
-      });
-      
-      anime({
-        targets: unifiedLabel,
-        opacity: [0, 1],
-        scale: [0.3, 1.1, 1],
-        duration: 600,
-        delay: 400,
-        easing: 'easeOutBack'
-      });
-    } else {
-      unifiedBox.style.transition = 'all 0.8s ease';
-      unifiedBox.style.opacity = '1';
-      unifiedBox.style.transform = 'scale(1)';
-      setTimeout(() => {
-        unifiedLabel.style.transition = 'all 0.6s ease';
-        unifiedLabel.style.opacity = '1';
-        unifiedLabel.style.transform = unifiedLabel.style.transform.replace('scale(0.5)', 'scale(1)');
-      }, 400);
-    }
+    // Pure CSS animation without Anime.js
+    unifiedBox.style.transition = 'all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+    unifiedBox.style.opacity = '1';
+    unifiedBox.style.transform = 'scale(1)';
+    unifiedBox.classList.add('detected');
+    
+    setTimeout(() => {
+      unifiedLabel.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      unifiedLabel.style.opacity = '1';
+      unifiedLabel.style.transform = unifiedLabel.style.transform.replace('scale(0.5)', 'scale(1)');
+    }, 400);
   }
 
   isInputElement(element) {
