@@ -194,7 +194,9 @@ class ModernLayoutDetector {
     
     // Ctrl+Alt for Epic Auto-Fix All
     if (event.ctrlKey && event.altKey && !event.shiftKey && !event.metaKey) {
+      console.log('🎹 DEBUG: Ctrl+Alt detected, triggering epic highlighting');
       const element = document.activeElement;
+      console.log('🎹 DEBUG: Active element:', element, 'isInputElement:', this.isInputElement(element));
       if (this.isInputElement(element)) {
         event.preventDefault();
         this.startEpicProgressiveHighlighting(element);
@@ -307,9 +309,11 @@ class ModernLayoutDetector {
 
   findWrongWords(element) {
     const text = element.value || element.textContent || '';
+    console.log('🔍 DEBUG: findWrongWords called with text:', { text, elementType: element.tagName });
     if (!text) return [];
     
     const words = text.split(/(\s+)/);
+    console.log('🔍 DEBUG: Split words:', words);
     const wrongWords = [];
     let position = 0;
     
@@ -319,9 +323,11 @@ class ModernLayoutDetector {
       
       if (trimmedWord.length >= 1) {
         const converted = this.convertText(trimmedWord);
+        console.log('🔍 DEBUG: Converting word:', { trimmedWord, converted });
         
         if (converted !== trimmedWord && this.shouldAutoCorrect(trimmedWord, converted)) {
           const isArabic = this.hasArabic(trimmedWord);
+          console.log('🔍 DEBUG: Found wrong word:', { trimmedWord, converted, isArabic });
           
           wrongWords.push({
             original: trimmedWord,
@@ -337,6 +343,7 @@ class ModernLayoutDetector {
       position += word.length;
     }
     
+    console.log('🔍 DEBUG: Final wrong words:', wrongWords);
     return wrongWords;
   }
 
@@ -410,44 +417,8 @@ class ModernLayoutDetector {
     // Wait for animations to complete
     await this.delay(800);
     
-    // Epic staggered animation with Anime.js or fallback
-    if (window.anime) {
-      anime({
-        targets: highlights.map(h => h.highlight),
-        opacity: [0, 1],
-        scale: [0.5, 1.1, 1],
-        duration: 600,
-        delay: anime.stagger(200),
-        easing: 'easeOutElastic(1, .8)',
-        complete: () => {
-          highlights.forEach(h => h.highlight.classList.add('detected'));
-        }
-      });
-      
-      // Animate preview text
-      anime({
-        targets: highlights.map(h => h.preview),
-        opacity: [0, 1],
-        scale: [0.5, 1],
-        duration: 400,
-        delay: anime.stagger(200, { start: 300 }),
-        easing: 'easeOutBack'
-      });
-    } else {
-      // Fallback CSS animation
-      highlights.forEach((h, i) => {
-        setTimeout(() => {
-          h.highlight.style.transition = 'all 0.6s ease';
-          h.highlight.style.opacity = '1';
-          h.highlight.style.transform = 'scale(1)';
-          h.highlight.classList.add('detected');
-          
-          h.preview.style.transition = 'all 0.4s ease';
-          h.preview.style.opacity = '1';
-          h.preview.style.transform = h.preview.style.transform.replace('scale(0.5)', 'scale(1)');
-        }, i * 200);
-      });
-    }
+    // All animations are now handled by the unified system above
+    // No need for additional highlight animations since we're using unified boxes
     
     // Wait for all animations to complete
     await this.delay(wrongWords.length * 200 + 800);
@@ -532,11 +503,22 @@ class ModernLayoutDetector {
     }
     
     // Apply the actual text correction
+    console.log('🔧 Applying corrections...', { originalText, correctedText });
+    
     if (element.value !== undefined) {
       element.value = correctedText;
+      // Trigger input event to notify of changes
+      element.dispatchEvent(new Event('input', { bubbles: true }));
     } else if (element.textContent !== undefined) {
       element.textContent = correctedText;
+    } else if (element.innerHTML !== undefined) {
+      element.innerHTML = correctedText;
     }
+    
+    // Focus the element to ensure changes are visible
+    element.focus();
+    
+    console.log('✅ Text correction applied successfully!');
     
     // Save to history
     this.undoHistory.push({
@@ -694,11 +676,11 @@ class ModernLayoutDetector {
     unifiedBox.style.borderRadius = '8px';
     unifiedBox.style.opacity = '0';
     unifiedBox.style.transform = 'scale(0.5)';
-    unifiedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(238, 90, 82, 0.08) 100%)';
+    unifiedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(238, 90, 82, 0.2) 100%)';
     unifiedBox.style.border = '2px solid rgba(255, 107, 107, 0.5)';
     unifiedBox.style.boxShadow = '0 4px 20px rgba(255, 107, 107, 0.2)';
-    unifiedBox.style.backdropFilter = 'blur(1px)';
-    unifiedBox.style.webkitBackdropFilter = 'blur(1px)';
+    unifiedBox.style.backdropFilter = 'none';
+    unifiedBox.style.webkitBackdropFilter = 'none';
     
     return unifiedBox;
   }
@@ -725,7 +707,7 @@ class ModernLayoutDetector {
     unifiedLabel.innerHTML = unifiedText;
     unifiedLabel.style.opacity = '0';
     unifiedLabel.style.transform = 'scale(0.5)';
-    unifiedLabel.style.fontSize = '10px';
+    unifiedLabel.style.fontSize = '13px';
     unifiedLabel.style.maxWidth = '600px';
     unifiedLabel.style.padding = '12px 20px';
     unifiedLabel.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
