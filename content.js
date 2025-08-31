@@ -235,23 +235,23 @@ class ModernLayoutDetector {
     const progressBar = this.createEpicScanProgressBar();
     const scanLine = this.createEpicScanLine(element);
     
-    // Epic progress bar animation with pure CSS
-    progressBar.style.transition = 'width 2s ease-in-out';
+    // Epic progress bar animation with pure CSS - 70% FASTER!
+    progressBar.style.transition = 'width 0.6s ease-in-out';
     progressBar.style.width = '100%';
     
-    // Epic scan line animation
+    // Epic scan line animation - 70% FASTER!
     const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);
     const paddingLeft = parseInt(style.paddingLeft) || 0;
     const paddingRight = parseInt(style.paddingRight) || 0;
     const textAreaWidth = rect.width - paddingLeft - paddingRight;
     
-    scanLine.style.transition = 'transform 2s ease-in-out, opacity 2s ease-in-out';
+    scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
     scanLine.style.opacity = '1';
     scanLine.style.transform = `translateX(${textAreaWidth}px)`;
     
-    // Wait for scan animation to complete
-    await this.delay(2200);
+    // Wait for scan animation to complete - 70% FASTER!
+    await this.delay(660);
     
     // Remove scanning elements
     document.body.removeChild(progressBar);
@@ -270,12 +270,12 @@ class ModernLayoutDetector {
     this.showNotification(`🎯 Found ${wrongWords.length} wrong word${wrongWords.length > 1 ? 's' : ''}. Deploying epic highlights...`, 'info');
     await this.epicHighlightWrongWords(element, wrongWords);
     
-    // Phase 4: Show Preview
-    await this.delay(1500);
+    // Phase 4: Show Preview - 70% FASTER!
+    await this.delay(450);
     this.showNotification(`⚡ Ready to unleash corrections on ${wrongWords.length} word${wrongWords.length > 1 ? 's' : ''}...`, 'info');
     
-    // Phase 5: Epic Corrections with Animation
-    await this.delay(800);
+    // Phase 5: Epic Corrections with Animation - 70% FASTER!
+    await this.delay(240);
     await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
   }
 
@@ -414,14 +414,14 @@ class ModernLayoutDetector {
       this.animateUnifiedHighlight(unifiedBox, unifiedLabel);
     }
     
-    // Wait for animations to complete
-    await this.delay(800);
+    // Wait for animations to complete - 70% FASTER!
+    await this.delay(240);
     
     // All animations are now handled by the unified system above
     // No need for additional highlight animations since we're using unified boxes
     
-    // Wait for all animations to complete
-    await this.delay(wrongWords.length * 200 + 800);
+    // Wait for all animations to complete - 70% FASTER!
+    await this.delay(wrongWords.length * 60 + 240);
   }
 
   // Precise word positioning using canvas text measurement
@@ -487,18 +487,18 @@ class ModernLayoutDetector {
       const wordData = wrongWords[i];
       
       if (wordData.highlightElement) {
-        // Pure CSS correction pulse animation
-        wordData.highlightElement.style.transition = 'all 0.4s ease';
+        // Pure CSS correction pulse animation - 70% FASTER!
+        wordData.highlightElement.style.transition = 'all 0.12s ease';
         wordData.highlightElement.style.transform = 'scale(1.3)';
         
-        await this.delay(200);
+        await this.delay(60);
         
-        // Success transformation
-        wordData.highlightElement.style.transition = 'all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        // Success transformation - 70% FASTER!
+        wordData.highlightElement.style.transition = 'all 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
         wordData.highlightElement.style.backgroundColor = '#2ed573';
         wordData.highlightElement.style.transform = 'scale(1)';
         
-        await this.delay(300);
+        await this.delay(90);
       }
     }
     
@@ -532,20 +532,20 @@ class ModernLayoutDetector {
       timestamp: Date.now()
     });
     
-    // Epic cleanup animation with pure CSS
+    // Epic cleanup animation with pure CSS - 70% FASTER!
     wrongWords.forEach((wordData, i) => {
       setTimeout(() => {
         if (wordData.highlightElement) {
-          wordData.highlightElement.style.transition = 'all 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
+          wordData.highlightElement.style.transition = 'all 0.18s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
           wordData.highlightElement.style.opacity = '0';
           wordData.highlightElement.style.transform = 'scale(0.5)';
         }
         if (wordData.previewElement) {
-          wordData.previewElement.style.transition = 'all 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
+          wordData.previewElement.style.transition = 'all 0.18s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
           wordData.previewElement.style.opacity = '0';
           wordData.previewElement.style.transform = 'scale(0.5)';
         }
-      }, i * 100);
+      }, i * 30);
     });
     
     setTimeout(() => {
@@ -557,7 +557,7 @@ class ModernLayoutDetector {
           document.body.removeChild(wordData.previewElement);
         }
       });
-    }, 1000);
+    }, 300);
     
     // Epic success notification
     const count = wrongWords.length;
@@ -753,17 +753,17 @@ class ModernLayoutDetector {
 
   // 🎆 Animate unified highlight with EPIC effects
   animateUnifiedHighlight(unifiedBox, unifiedLabel) {
-    // Pure CSS animation without Anime.js
-    unifiedBox.style.transition = 'all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+    // Pure CSS animation without Anime.js - 70% FASTER!
+    unifiedBox.style.transition = 'all 0.24s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
     unifiedBox.style.opacity = '1';
     unifiedBox.style.transform = 'scale(1)';
     unifiedBox.classList.add('detected');
     
     setTimeout(() => {
-      unifiedLabel.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      unifiedLabel.style.transition = 'all 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
       unifiedLabel.style.opacity = '1';
       unifiedLabel.style.transform = unifiedLabel.style.transform.replace('scale(0.5)', 'scale(1)');
-    }, 400);
+    }, 120);
   }
 
   isInputElement(element) {
