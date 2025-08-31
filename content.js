@@ -838,11 +838,11 @@ class ModernLayoutDetector {
     unifiedBox.style.borderRadius = '8px';
     unifiedBox.style.opacity = '0';
     unifiedBox.style.transform = 'scale(0.5)';
-    unifiedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(238, 90, 82, 0.12) 100%)';
-    unifiedBox.style.border = '3px solid rgba(255, 107, 107, 0.6)';
-    unifiedBox.style.boxShadow = '0 8px 40px rgba(255, 107, 107, 0.3)';
-    unifiedBox.style.backdropFilter = 'blur(4px)';
-    unifiedBox.style.webkitBackdropFilter = 'blur(4px)';
+    unifiedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(238, 90, 82, 0.08) 100%)';
+    unifiedBox.style.border = '2px solid rgba(255, 107, 107, 0.5)';
+    unifiedBox.style.boxShadow = '0 4px 20px rgba(255, 107, 107, 0.2)';
+    unifiedBox.style.backdropFilter = 'blur(1px)';
+    unifiedBox.style.webkitBackdropFilter = 'blur(1px)';
     
     return unifiedBox;
   }
@@ -861,8 +861,8 @@ class ModernLayoutDetector {
     const centerX = (minX + maxX) / 2;
     
     // Create unified text showing ALL corrections
-    const corrections = wrongWords.map(word => `${word.original} → ${word.converted}`);
-    const unifiedText = corrections.join(' • ');
+    const corrections = wrongWords.map(word => word.converted);
+    const unifiedText = `Corrected words: ${corrections.join(', ')}`;
     
     const unifiedLabel = document.createElement('div');
     unifiedLabel.className = 'word-preview unified-preview';
@@ -880,17 +880,16 @@ class ModernLayoutDetector {
     unifiedLabel.style.backdropFilter = 'blur(10px)';
     unifiedLabel.style.webkitBackdropFilter = 'blur(10px)';
     
-    // Position above the unified box center
-    const text = element.value || element.textContent || '';
-    const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
+    // Position above the text area, not above the words
+    const elementRect = element.getBoundingClientRect();
     
     if (isRTL) {
-      unifiedLabel.style.left = maxX + 'px';
-      unifiedLabel.style.top = (minY - 60) + 'px';
+      unifiedLabel.style.left = (elementRect.right - 20) + 'px';
+      unifiedLabel.style.top = (elementRect.top - 60) + 'px';
       unifiedLabel.style.transform += ' translateX(-100%)';
     } else {
-      unifiedLabel.style.left = centerX + 'px';
-      unifiedLabel.style.top = (minY - 60) + 'px';
+      unifiedLabel.style.left = (elementRect.left + elementRect.width/2) + 'px';
+      unifiedLabel.style.top = (elementRect.top - 60) + 'px';
       unifiedLabel.style.transform += ' translateX(-50%)';
     }
     

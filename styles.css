@@ -355,17 +355,17 @@ textarea.layout-highlight {
 /* 🎆 UNIFIED HIGHLIGHT STYLES - One beautiful box for ALL wrong words */
 .unified-highlight {
   animation: unifiedPulse 3s ease-in-out infinite alternate;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(238, 90, 82, 0.15) 100%) !important;
-  border: 3px solid rgba(255, 107, 107, 0.6) !important;
-  box-shadow: 0 8px 40px rgba(255, 107, 107, 0.3), inset 0 2px 0 rgba(255,255,255,0.1) !important;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(238, 90, 82, 0.08) 100%) !important;
+  border: 2px solid rgba(255, 107, 107, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.2), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
 
 .unified-highlight:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.25) 0%, rgba(238, 90, 82, 0.25) 100%) !important;
-  border-color: rgba(255, 107, 107, 0.8) !important;
-  box-shadow: 0 12px 60px rgba(255, 107, 107, 0.4), inset 0 2px 0 rgba(255,255,255,0.2) !important;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(238, 90, 82, 0.12) 100%) !important;
+  border-color: rgba(255, 107, 107, 0.7) !important;
+  box-shadow: 0 6px 30px rgba(255, 107, 107, 0.3), inset 0 1px 0 rgba(255,255,255,0.1) !important;
 }
 
 /* 🎆 UNIFIED PREVIEW STYLES - One beautiful label for ALL corrections */
