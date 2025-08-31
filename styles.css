@@ -233,13 +233,14 @@
 
 /* Arabic Wrong Words - Red Theme */
 .wrong-word-highlight.arabic {
-  background: linear-gradient(135deg, 
-    rgba(255, 107, 107, 0.2) 0%, 
-    rgba(238, 90, 82, 0.3) 100%);
-  border: 2px solid rgba(255, 107, 107, 0.6);
+  background: rgba(255, 107, 107, 0.15);
+  border: 2px solid #ff6b6b;
   box-shadow: 
-    0 0 20px rgba(255, 107, 107, 0.4),
-    inset 0 0 20px rgba(255, 107, 107, 0.1);
+    0 0 15px rgba(255, 107, 107, 0.3),
+    inset 0 0 10px rgba(255, 107, 107, 0.1);
+  animation: arabicPulse 1s infinite alternate;
+  direction: rtl;
+  text-align: right;
 }
 
 /* English Wrong Words - Blue Theme */
@@ -317,37 +318,26 @@
 /* Preview Text Above Wrong Words */
 .word-preview {
   position: fixed;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
   font-family: 'Segoe UI', Arial, sans-serif;
   font-weight: 600;
-  z-index: 999996;
-  pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 999997;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  user-select: none;
   border: 1px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  opacity: 0;
-  transform: translateY(10px) scale(0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.word-preview.show {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-.word-preview::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: #2c3e50;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  direction: inherit;
 }
 
 /* Enhanced input highlighting */

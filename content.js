@@ -446,9 +446,22 @@ class ModernLayoutDetector {
       preview.textContent = wordData.converted;
       preview.style.opacity = '0';
       preview.style.transform = 'scale(0.5)';
-      preview.style.left = (wordPosition.x + wordPosition.width/2) + 'px';
-      preview.style.top = (wordPosition.y - 35) + 'px';
-      preview.style.transform += ' translateX(-50%)';
+      
+      // Check if text is RTL for proper preview positioning
+      const text = element.value || element.textContent || '';
+      const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
+      
+      if (isRTL) {
+        // For RTL, position preview above the right side of the word
+        preview.style.left = (wordPosition.x + wordPosition.width) + 'px';
+        preview.style.top = (wordPosition.y - 35) + 'px';
+        preview.style.transform += ' translateX(-100%)';
+      } else {
+        // For LTR, position preview above the center of the word
+        preview.style.left = (wordPosition.x + wordPosition.width/2) + 'px';
+        preview.style.top = (wordPosition.y - 35) + 'px';
+        preview.style.transform += ' translateX(-50%)';
+      }
       
       document.body.appendChild(preview);
       
@@ -509,11 +522,15 @@ class ModernLayoutDetector {
     const lineHeight = parseInt(style.lineHeight) || fontSize * 1.2;
     const paddingLeft = parseInt(style.paddingLeft) || 0;
     const paddingTop = parseInt(style.paddingTop) || 0;
+    const paddingRight = parseInt(style.paddingRight) || 0;
     
     // Get text before the word to calculate offset
     const text = element.value || element.textContent || '';
     const textBefore = text.substring(0, start);
     const word = text.substring(start, end);
+    
+    // Check if text direction is RTL
+    const isRTL = style.direction === 'rtl' || this.hasArabic(text);
     
     // Measure text width using canvas
     const canvas = document.createElement('canvas');
@@ -523,8 +540,19 @@ class ModernLayoutDetector {
     const textBeforeWidth = ctx.measureText(textBefore).width;
     const wordWidth = ctx.measureText(word).width;
     
+    let wordX;
+    if (isRTL) {
+      // For RTL, position from right side
+      const totalTextWidth = ctx.measureText(text).width;
+      const elementWidth = rect.width - paddingLeft - paddingRight;
+      wordX = rect.left + paddingLeft + (elementWidth - totalTextWidth) + textBeforeWidth;
+    } else {
+      // For LTR, position from left side
+      wordX = rect.left + paddingLeft + textBeforeWidth;
+    }
+    
     return {
-      x: rect.left + paddingLeft + textBeforeWidth,
+      x: wordX,
       y: rect.top + paddingTop,
       width: wordWidth,
       height: lineHeight
