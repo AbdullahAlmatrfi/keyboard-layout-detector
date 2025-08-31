@@ -338,6 +338,9 @@
   text-overflow: ellipsis;
   pointer-events: none;
   direction: inherit;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 /* Enhanced input highlighting */

@@ -259,8 +259,8 @@ class ModernLayoutDetector {
       return;
     }
     
-    // Ctrl+Enter for Fix Current Word
-    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    // Ctrl+Q for Fix Current Word
+    if ((event.ctrlKey || event.metaKey) && event.key === 'q') {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
         event.preventDefault();
@@ -419,6 +419,7 @@ class ModernLayoutDetector {
   // EPIC highlighting with perfect positioning
   async epicHighlightWrongWords(element, wrongWords) {
     const highlights = [];
+    const previewPositions = []; // Track positions to avoid overlaps
     
     // Create all highlights first
     for (let i = 0; i < wrongWords.length; i++) {
@@ -451,17 +452,39 @@ class ModernLayoutDetector {
       const text = element.value || element.textContent || '';
       const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
       
+      // Smart positioning to avoid overlaps
+      let previewX, previewY;
       if (isRTL) {
         // For RTL, position preview above the right side of the word
-        preview.style.left = (wordPosition.x + wordPosition.width) + 'px';
-        preview.style.top = (wordPosition.y - 35) + 'px';
+        previewX = wordPosition.x + wordPosition.width;
+        previewY = wordPosition.y - 35;
         preview.style.transform += ' translateX(-100%)';
       } else {
         // For LTR, position preview above the center of the word
-        preview.style.left = (wordPosition.x + wordPosition.width/2) + 'px';
-        preview.style.top = (wordPosition.y - 35) + 'px';
+        previewX = wordPosition.x + wordPosition.width/2;
+        previewY = wordPosition.y - 35;
         preview.style.transform += ' translateX(-50%)';
       }
+      
+      // Check for overlaps and adjust position
+      const previewWidth = 120; // Estimated preview width
+      const minSpacing = 15;
+      
+      for (const existingPos of previewPositions) {
+        const horizontalOverlap = Math.abs(previewX - existingPos.x) < (previewWidth + minSpacing);
+        const verticalOverlap = Math.abs(previewY - existingPos.y) < 35; // Preview height + spacing
+        
+        if (horizontalOverlap && verticalOverlap) {
+          // Move preview up to avoid overlap
+          previewY = existingPos.y - 40;
+        }
+      }
+      
+      // Store this position to check future overlaps
+      previewPositions.push({ x: previewX, y: previewY });
+      
+      preview.style.left = previewX + 'px';
+      preview.style.top = previewY + 'px';
       
       document.body.appendChild(preview);
       
