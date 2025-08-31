@@ -6,24 +6,64 @@ body {
 }
 
 .popup-container {
-  width: 280px;
+  width: 320px;
   padding: 20px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 h2 {
   font-size: 1.3em;
-  margin-bottom: 20px;
   color: #2c3e50;
-  text-align: center;
   font-weight: 600;
+  margin: 0;
+}
+
+.status-icon {
+  font-size: 1.2em;
+  margin-left: 10px;
+  animation: pulse 2s infinite;
+}
+
+.status-icon.active {
+  color: #10b981;
+}
+
+.status-icon.paused {
+  color: #ef4444;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.instructions {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #3b82f6;
+}
+
+.instructions p {
+  margin: 0;
+  font-size: 0.9em;
+  color: #475569;
 }
 
 .action-btn {
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px;
   margin-bottom: 12px;
   border: none;
   border-radius: 8px;
@@ -33,8 +73,22 @@ h2 {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 12px;
+  text-align: left;
+}
+
+.btn-content {
+  flex: 1;
+}
+
+.btn-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.btn-desc {
+  font-size: 0.85em;
+  opacity: 0.8;
 }
 
 .action-btn.primary {
@@ -59,8 +113,20 @@ h2 {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
+.action-btn.undo {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.action-btn.undo:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
 .btn-icon {
-  font-size: 1.2em;
+  font-size: 1.4em;
+  flex-shrink: 0;
 }
 
 .divider {
@@ -70,13 +136,12 @@ h2 {
 }
 
 .switch {
-  display: block;
-  margin-bottom: 14px;
-  font-size: 0.95em;
-  color: #374151;
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 14px;
+  font-size: 0.95em;
+  color: #374151;
 }
 
 .switch input {

@@ -84,6 +84,13 @@ class ModernLayoutDetector {
       } else if (request.action === 'autoFixAll') {
         this.autoFixAllWords(sendResponse);
         return true; // Keep message channel open for async response
+      } else if (request.action === 'undo') {
+        const success = this.undoLastCorrection();
+        sendResponse({success: success});
+        return true;
+      } else if (request.action === 'checkUndo') {
+        sendResponse({hasUndo: this.undoHistory.length > 0});
+        return true;
       }
     });
     
@@ -130,19 +137,13 @@ class ModernLayoutDetector {
     
     this.isCorrectingNow = true;
     
-    // Find and fix all wrong words
-    const wrongWords = this.findWrongWords(element);
-    
-    if (wrongWords.length === 0) {
-      this.isCorrectingNow = false;
-      sendResponse({success: true, count: 0, message: 'No wrong words found'});
-      return;
-    }
-    
-    // Apply corrections with animation
-    await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
+    // Start the EPIC animation sequence
+    await this.startEpicProgressiveHighlighting(element);
     
     this.isCorrectingNow = false;
+    
+    // Get the final count for response
+    const wrongWords = this.findWrongWords(element);
     sendResponse({success: true, count: wrongWords.length});
   }
 
@@ -237,11 +238,33 @@ class ModernLayoutDetector {
   }
 
   handleKeydown(event) {
+    if (this.pauseExtension) return;
+    
     // Ctrl+Z for undo
     if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
       if (this.undoHistory.length > 0) {
         event.preventDefault();
         this.undoLastCorrection();
+      }
+      return;
+    }
+    
+    // Ctrl+Shift for Epic Auto-Fix All
+    if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey) {
+      const element = document.activeElement;
+      if (this.isInputElement(element)) {
+        event.preventDefault();
+        this.startEpicProgressiveHighlighting(element);
+      }
+      return;
+    }
+    
+    // Ctrl+Enter for Fix Current Word
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      const element = document.activeElement;
+      if (this.isInputElement(element)) {
+        event.preventDefault();
+        this.fixCurrentWord(() => {});
       }
       return;
     }
@@ -717,7 +740,7 @@ class ModernLayoutDetector {
   }
 
   undoLastCorrection() {
-    if (this.undoHistory.length === 0) return;
+    if (this.undoHistory.length === 0) return false;
     
     const lastAction = this.undoHistory.pop();
     const element = lastAction.element;
@@ -740,11 +763,15 @@ class ModernLayoutDetector {
       setTimeout(() => {
         this.isCorrectingNow = false;
       }, 100);
+      
+      return true;
     }
     
     if (this.undoHistory.length === 0) {
       this.undoButton.style.display = 'none';
     }
+    
+    return false;
   }
 
   isInputElement(element) {

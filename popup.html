@@ -7,16 +7,37 @@
 </head>
 <body>
   <div class="popup-container">
-    <h2>🔤 Layout Detector</h2>
+    <div class="header">
+      <h2>🔤 Layout Detector</h2>
+      <div id="statusIcon" class="status-icon active">●</div>
+    </div>
+    
+    <div class="instructions">
+      <p>📝 <strong>Focus on any text field</strong> and use the buttons below:</p>
+    </div>
     
     <button id="fixCurrentWord" class="action-btn primary">
       <span class="btn-icon">🎯</span>
-      Fix Current Word
+      <div class="btn-content">
+        <div class="btn-title">Fix Current Word</div>
+        <div class="btn-desc">Fix word at cursor (Ctrl+Enter)</div>
+      </div>
     </button>
     
     <button id="autoFixAll" class="action-btn secondary">
       <span class="btn-icon">⚡</span>
-      Auto-Fix All Words
+      <div class="btn-content">
+        <div class="btn-title">Auto-Fix All Words</div>
+        <div class="btn-desc">Epic scan & fix all (Ctrl+Shift)</div>
+      </div>
+    </button>
+    
+    <button id="undoBtn" class="action-btn undo" style="display: none;">
+      <span class="btn-icon">↶</span>
+      <div class="btn-content">
+        <div class="btn-title">Undo Last Change</div>
+        <div class="btn-desc">Restore previous text (Ctrl+Z)</div>
+      </div>
     </button>
     
     <div class="divider"></div>
