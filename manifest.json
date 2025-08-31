@@ -7,7 +7,8 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["fa-layout.js", "content.js"]
+      "js": ["fa-layout.js", "content.js"],
+      "css": ["styles.css"]
     }
   ],
   "action": {
