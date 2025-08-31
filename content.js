@@ -419,79 +419,81 @@ class ModernLayoutDetector {
   // EPIC highlighting with perfect positioning
   async epicHighlightWrongWords(element, wrongWords) {
     const highlights = [];
-    const previewPositions = []; // Track positions to avoid overlaps
     
-    // Create all highlights first
-    for (let i = 0; i < wrongWords.length; i++) {
-      const wordData = wrongWords[i];
+    // 🎯 SMART GROUPING: Group nearby words together
+    const wordGroups = this.groupNearbyWords(wrongWords, element);
+    
+    // Create highlights for each group
+    for (let groupIndex = 0; groupIndex < wordGroups.length; groupIndex++) {
+      const group = wordGroups[groupIndex];
       
-      // Get precise word position using canvas measurement
-      const wordPosition = this.getPreciseWordPosition(element, wordData.start, wordData.end);
-      
-      // Create highlight element
-      const highlight = document.createElement('div');
-      highlight.className = `wrong-word-highlight ${wordData.isArabic ? 'arabic' : 'english'}`;
-      highlight.style.left = wordPosition.x + 'px';
-      highlight.style.top = wordPosition.y + 'px';
-      highlight.style.width = wordPosition.width + 'px';
-      highlight.style.height = wordPosition.height + 'px';
-      highlight.style.borderRadius = '4px';
-      highlight.style.opacity = '0';
-      highlight.style.transform = 'scale(0.5)';
-      
-      document.body.appendChild(highlight);
-      
-      // Create preview text
-      const preview = document.createElement('div');
-      preview.className = 'word-preview';
-      preview.textContent = wordData.converted;
-      preview.style.opacity = '0';
-      preview.style.transform = 'scale(0.5)';
-      
-      // Check if text is RTL for proper preview positioning
-      const text = element.value || element.textContent || '';
-      const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
-      
-      // Smart positioning to avoid overlaps
-      let previewX, previewY;
-      if (isRTL) {
-        // For RTL, position preview above the right side of the word
-        previewX = wordPosition.x + wordPosition.width;
-        previewY = wordPosition.y - 35;
-        preview.style.transform += ' translateX(-100%)';
-      } else {
-        // For LTR, position preview above the center of the word
-        previewX = wordPosition.x + wordPosition.width/2;
-        previewY = wordPosition.y - 35;
-        preview.style.transform += ' translateX(-50%)';
-      }
-      
-      // Check for overlaps and adjust position
-      const previewWidth = 120; // Estimated preview width
-      const minSpacing = 15;
-      
-      for (const existingPos of previewPositions) {
-        const horizontalOverlap = Math.abs(previewX - existingPos.x) < (previewWidth + minSpacing);
-        const verticalOverlap = Math.abs(previewY - existingPos.y) < 35; // Preview height + spacing
+      if (group.length === 1) {
+        // 🎯 SINGLE WORD: Keep original process
+        const wordData = group[0];
+        const wordPosition = this.getPreciseWordPosition(element, wordData.start, wordData.end);
         
-        if (horizontalOverlap && verticalOverlap) {
-          // Move preview up to avoid overlap
-          previewY = existingPos.y - 40;
+        // Create individual highlight
+        const highlight = document.createElement('div');
+        highlight.className = `wrong-word-highlight ${wordData.isArabic ? 'arabic' : 'english'}`;
+        highlight.style.left = wordPosition.x + 'px';
+        highlight.style.top = wordPosition.y + 'px';
+        highlight.style.width = wordPosition.width + 'px';
+        highlight.style.height = wordPosition.height + 'px';
+        highlight.style.borderRadius = '4px';
+        highlight.style.opacity = '0';
+        highlight.style.transform = 'scale(0.5)';
+        
+        document.body.appendChild(highlight);
+        
+        // Create individual preview
+        const preview = document.createElement('div');
+        preview.className = 'word-preview';
+        preview.textContent = wordData.converted;
+        preview.style.opacity = '0';
+        preview.style.transform = 'scale(0.5)';
+        
+        // Position preview above word
+        const text = element.value || element.textContent || '';
+        const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
+        
+        if (isRTL) {
+          preview.style.left = (wordPosition.x + wordPosition.width) + 'px';
+          preview.style.top = (wordPosition.y - 35) + 'px';
+          preview.style.transform += ' translateX(-100%)';
+        } else {
+          preview.style.left = (wordPosition.x + wordPosition.width/2) + 'px';
+          preview.style.top = (wordPosition.y - 35) + 'px';
+          preview.style.transform += ' translateX(-50%)';
         }
+        
+        document.body.appendChild(preview);
+        
+        wordData.highlightElement = highlight;
+        wordData.previewElement = preview;
+        highlights.push({ highlight, preview, wordData });
+        
+      } else {
+        // 🎆 MULTIPLE WORDS: Create beautiful merged box and label!
+        const mergedBox = this.createMergedHighlight(group, element);
+        const mergedPreview = this.createMergedPreview(group, element);
+        
+        document.body.appendChild(mergedBox);
+        document.body.appendChild(mergedPreview);
+        
+        // Store references for all words in the group
+        group.forEach(wordData => {
+          wordData.highlightElement = mergedBox;
+          wordData.previewElement = mergedPreview;
+        });
+        
+        highlights.push({ 
+          highlight: mergedBox, 
+          preview: mergedPreview, 
+          wordData: group[0], // Representative word
+          isGroup: true,
+          groupWords: group
+        });
       }
-      
-      // Store this position to check future overlaps
-      previewPositions.push({ x: previewX, y: previewY });
-      
-      preview.style.left = previewX + 'px';
-      preview.style.top = previewY + 'px';
-      
-      document.body.appendChild(preview);
-      
-      // Store references
-      wordData.highlightElement = highlight;
-      wordData.previewElement = preview;
-      highlights.push({ highlight, preview, wordData });
     }
     
     // Epic staggered animation with Anime.js or fallback
@@ -823,6 +825,118 @@ class ModernLayoutDetector {
     }
     
     return false;
+  }
+
+  // 🎯 Group nearby words that should be merged together
+  groupNearbyWords(wrongWords, element) {
+    if (wrongWords.length === 0) return [];
+    
+    const groups = [];
+    const used = new Set();
+    const proximityThreshold = 50; // pixels - words closer than this get grouped
+    
+    for (let i = 0; i < wrongWords.length; i++) {
+      if (used.has(i)) continue;
+      
+      const currentGroup = [wrongWords[i]];
+      used.add(i);
+      
+      const currentPos = this.getPreciseWordPosition(element, wrongWords[i].start, wrongWords[i].end);
+      
+      // Find other words close to this one
+      for (let j = i + 1; j < wrongWords.length; j++) {
+        if (used.has(j)) continue;
+        
+        const otherPos = this.getPreciseWordPosition(element, wrongWords[j].start, wrongWords[j].end);
+        
+        // Check if words are close enough horizontally and on same line
+        const horizontalDistance = Math.abs(currentPos.x - otherPos.x);
+        const verticalDistance = Math.abs(currentPos.y - otherPos.y);
+        
+        if (horizontalDistance < proximityThreshold && verticalDistance < 10) {
+          currentGroup.push(wrongWords[j]);
+          used.add(j);
+        }
+      }
+      
+      groups.push(currentGroup);
+    }
+    
+    return groups;
+  }
+
+  // 🎆 Create a beautiful merged highlight box for grouped words
+  createMergedHighlight(wordGroup, element) {
+    const positions = wordGroup.map(word => 
+      this.getPreciseWordPosition(element, word.start, word.end)
+    );
+    
+    // Calculate merged box dimensions
+    const minX = Math.min(...positions.map(p => p.x));
+    const maxX = Math.max(...positions.map(p => p.x + p.width));
+    const minY = Math.min(...positions.map(p => p.y));
+    const maxY = Math.max(...positions.map(p => p.y + p.height));
+    
+    const mergedBox = document.createElement('div');
+    mergedBox.className = 'wrong-word-highlight merged-highlight';
+    mergedBox.style.left = (minX - 4) + 'px'; // Add padding
+    mergedBox.style.top = (minY - 2) + 'px';
+    mergedBox.style.width = (maxX - minX + 8) + 'px';
+    mergedBox.style.height = (maxY - minY + 4) + 'px';
+    mergedBox.style.borderRadius = '6px';
+    mergedBox.style.opacity = '0';
+    mergedBox.style.transform = 'scale(0.5)';
+    mergedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(238, 90, 82, 0.15) 100%)';
+    mergedBox.style.border = '2px solid rgba(255, 107, 107, 0.4)';
+    mergedBox.style.boxShadow = '0 4px 20px rgba(255, 107, 107, 0.2)';
+    
+    return mergedBox;
+  }
+
+  // 🎆 Create a beautiful merged preview label for grouped words
+  createMergedPreview(wordGroup, element) {
+    const positions = wordGroup.map(word => 
+      this.getPreciseWordPosition(element, word.start, word.end)
+    );
+    
+    // Calculate center position for the merged preview
+    const minX = Math.min(...positions.map(p => p.x));
+    const maxX = Math.max(...positions.map(p => p.x + p.width));
+    const minY = Math.min(...positions.map(p => p.y));
+    
+    const centerX = (minX + maxX) / 2;
+    
+    // Create merged text with arrows
+    const corrections = wordGroup.map(word => `${word.original} → ${word.converted}`);
+    const mergedText = corrections.join(' • ');
+    
+    const mergedPreview = document.createElement('div');
+    mergedPreview.className = 'word-preview merged-preview';
+    mergedPreview.innerHTML = mergedText;
+    mergedPreview.style.opacity = '0';
+    mergedPreview.style.transform = 'scale(0.5)';
+    mergedPreview.style.fontSize = '11px'; // Slightly smaller for merged labels
+    mergedPreview.style.maxWidth = '300px';
+    mergedPreview.style.padding = '8px 14px';
+    mergedPreview.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    mergedPreview.style.border = '2px solid rgba(255,255,255,0.3)';
+    mergedPreview.style.boxShadow = '0 6px 25px rgba(0,0,0,0.4)';
+    
+    // Position above the merged box
+    const text = element.value || element.textContent || '';
+    const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
+    
+    if (isRTL) {
+      mergedPreview.style.left = maxX + 'px';
+      mergedPreview.style.top = (minY - 45) + 'px';
+      mergedPreview.style.transform += ' translateX(-100%)';
+    } else {
+      mergedPreview.style.left = centerX + 'px';
+      mergedPreview.style.top = (minY - 45) + 'px';
+      mergedPreview.style.transform += ' translateX(-50%)';
+    }
+    
+    return mergedPreview;
   }
 
   isInputElement(element) {
