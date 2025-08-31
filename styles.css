@@ -1,36 +1,410 @@
 .layout-tooltip {
   position: fixed;
-  background: #2c3e50;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
   font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
   z-index: 999999;
-  cursor: default;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   user-select: none;
-  border: 2px solid #3498db;
-  transition: all 0.2s ease;
-  max-width: 200px;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 400px;
   text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .layout-tooltip:hover {
-  background: #34495e;
-  transform: scale(1.05);
-  border-color: #2980b9;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
 }
 
 .layout-tooltip:active {
-  transform: scale(0.95);
-  background: #1abc9c;
+  transform: translateY(0) scale(0.98);
 }
 
-/* Highlight for input elements */
+/* Auto-Correct Toggle Button */
+.auto-correct-toggle {
+  position: fixed;
+  background: linear-gradient(135deg, #2ed573 0%, #1abc9c 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
+  z-index: 999998;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(46, 213, 115, 0.3);
+  user-select: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  min-width: 110px;
+}
+
+.auto-correct-toggle:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 25px rgba(46, 213, 115, 0.4);
+}
+
+.auto-correct-toggle.active {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+}
+
+.auto-correct-toggle.active:hover {
+  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4);
+}
+
+.toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-icon {
+  font-size: 16px;
+}
+
+.toggle-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 20px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider {
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Undo Button */
+.undo-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
+  z-index: 999997;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255, 167, 38, 0.3);
+  user-select: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+}
+
+.undo-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 25px rgba(255, 167, 38, 0.4);
+}
+
+.undo-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.undo-text {
+  font-size: 13px;
+}
+
+/* Notification System */
+.auto-correct-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
+  z-index: 999996;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  user-select: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(-20px);
+  max-width: 300px;
+}
+
+.auto-correct-notification.success {
+  background: linear-gradient(135deg, #2ed573 0%, #1abc9c 100%);
+  color: white;
+}
+
+.auto-correct-notification.info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.auto-correct-notification.warning {
+  background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+  color: white;
+}
+
+/* PROGRESSIVE HIGHLIGHTING ANIMATION SYSTEM */
+
+/* Scanning Line Animation - FIXED to only scan text area */
+.scan-line {
+  position: fixed;
+  width: 2px;
+  background: linear-gradient(to bottom, 
+    transparent 0%, 
+    #667eea 20%, 
+    #764ba2 50%, 
+    #667eea 80%, 
+    transparent 100%);
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+  z-index: 999995;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 2s ease-in-out, opacity 0.3s ease;
+}
+
+.scan-line.scanning {
+  opacity: 1;
+}
+
+/* Scanning Progress Bar */
+.scan-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    #667eea 0%, 
+    #764ba2 50%, 
+    #667eea 100%);
+  z-index: 999999;
+  transition: width 2s ease-in-out;
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+}
+
+.scan-progress.active {
+  width: 100%;
+}
+
+/* Wrong Word Highlighting */
+.wrong-word-highlight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 999994;
+  border-radius: 4px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+/* Arabic Wrong Words - Red Theme */
+.wrong-word-highlight.arabic {
+  background: rgba(255, 107, 107, 0.15);
+  border: 2px solid #ff6b6b;
+  box-shadow: 
+    0 0 15px rgba(255, 107, 107, 0.3),
+    inset 0 0 10px rgba(255, 107, 107, 0.1);
+  animation: arabicPulse 1s infinite alternate;
+  direction: rtl;
+  text-align: right;
+}
+
+/* English Wrong Words - Blue Theme */
+.wrong-word-highlight.english {
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.2) 0%, 
+    rgba(118, 75, 162, 0.3) 100%);
+  border: 2px solid rgba(102, 126, 234, 0.6);
+  box-shadow: 
+    0 0 20px rgba(102, 126, 234, 0.4),
+    inset 0 0 20px rgba(102, 126, 234, 0.1);
+}
+
+/* Highlight Animation States */
+.wrong-word-highlight.detected {
+  opacity: 1;
+  transform: scale(1);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.wrong-word-highlight.correcting {
+  animation: correctingPulse 0.6s ease-in-out;
+}
+
+.wrong-word-highlight.corrected {
+  background: linear-gradient(135deg, 
+    rgba(46, 213, 115, 0.3) 0%, 
+    rgba(26, 188, 156, 0.4) 100%);
+  border-color: rgba(46, 213, 115, 0.8);
+  box-shadow: 
+    0 0 25px rgba(46, 213, 115, 0.6),
+    inset 0 0 20px rgba(46, 213, 115, 0.2);
+  animation: successFlash 0.8s ease-out;
+}
+
+/* Pulse Animation for Wrong Words */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 107, 107, 0.4),
+      inset 0 0 20px rgba(255, 107, 107, 0.1);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(255, 107, 107, 0.6),
+      inset 0 0 25px rgba(255, 107, 107, 0.2);
+    transform: scale(1.02);
+  }
+}
+
+/* Correcting Animation */
+@keyframes correctingPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Success Flash Animation */
+@keyframes successFlash {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Preview Text Above Wrong Words */
+.word-preview {
+  position: fixed;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
+  z-index: 999997;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  user-select: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  direction: inherit;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+/* Enhanced input highlighting */
 input.layout-highlight, 
 textarea.layout-highlight {
-  background-color: #fff3cd !important;
-  border: 2px solid #ffc107 !important;
-  transition: all 0.2s ease;
+  background-color: rgba(102, 126, 234, 0.05) !important;
+  border: 2px solid rgba(102, 126, 234, 0.3) !important;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 🎆 UNIFIED HIGHLIGHT STYLES - One beautiful box for ALL wrong words */
+.unified-highlight {
+  animation: unifiedPulse 3s ease-in-out infinite alternate;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(238, 90, 82, 0.2) 100%) !important;
+  border: 2px solid rgba(255, 107, 107, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.2), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.unified-highlight:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.25) 0%, rgba(238, 90, 82, 0.25) 100%) !important;
+  border-color: rgba(255, 107, 107, 0.7) !important;
+  box-shadow: 0 6px 30px rgba(255, 107, 107, 0.3), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+}
+
+/* 🎆 UNIFIED PREVIEW STYLES - One beautiful label for ALL corrections */
+.unified-preview {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: 3px solid rgba(255,255,255,0.5) !important;
+  box-shadow: 0 12px 50px rgba(0,0,0,0.5), 0 4px 20px rgba(102, 126, 234, 0.4) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  animation: unifiedPreviewGlow 4s ease-in-out infinite alternate;
+  text-align: center;
+  line-height: 1.4;
+}
+
+@keyframes unifiedPulse {
+  0% { 
+    box-shadow: 0 8px 40px rgba(255, 107, 107, 0.3), inset 0 2px 0 rgba(255,255,255,0.1);
+    border-color: rgba(255, 107, 107, 0.6);
+    transform: scale(1);
+  }
+  100% { 
+    box-shadow: 0 15px 60px rgba(255, 107, 107, 0.5), inset 0 2px 0 rgba(255,255,255,0.2);
+    border-color: rgba(255, 107, 107, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes unifiedPreviewGlow {
+  0% { 
+    box-shadow: 0 12px 50px rgba(0,0,0,0.5), 0 4px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(0);
+  }
+  100% { 
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6), 0 8px 40px rgba(102, 126, 234, 0.6);
+    transform: translateY(-2px);
+  }
+}
+
+/* Smooth transitions for all elements */
+* {
+  transition: filter 0.3s ease, background 0.3s ease;
 }
