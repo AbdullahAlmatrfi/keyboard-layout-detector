@@ -418,83 +418,73 @@ class ModernLayoutDetector {
 
   // EPIC highlighting with perfect positioning
   async epicHighlightWrongWords(element, wrongWords) {
-    const highlights = [];
+    if (wrongWords.length === 0) return;
     
-    // 🎯 SMART GROUPING: Group nearby words together
-    const wordGroups = this.groupNearbyWords(wrongWords, element);
-    
-    // Create highlights for each group
-    for (let groupIndex = 0; groupIndex < wordGroups.length; groupIndex++) {
-      const group = wordGroups[groupIndex];
+    if (wrongWords.length === 1) {
+      // 🎯 SINGLE WORD: Keep original individual process
+      const wordData = wrongWords[0];
+      const wordPosition = this.getPreciseWordPosition(element, wordData.start, wordData.end);
       
-      if (group.length === 1) {
-        // 🎯 SINGLE WORD: Keep original process
-        const wordData = group[0];
-        const wordPosition = this.getPreciseWordPosition(element, wordData.start, wordData.end);
-        
-        // Create individual highlight
-        const highlight = document.createElement('div');
-        highlight.className = `wrong-word-highlight ${wordData.isArabic ? 'arabic' : 'english'}`;
-        highlight.style.left = wordPosition.x + 'px';
-        highlight.style.top = wordPosition.y + 'px';
-        highlight.style.width = wordPosition.width + 'px';
-        highlight.style.height = wordPosition.height + 'px';
-        highlight.style.borderRadius = '4px';
-        highlight.style.opacity = '0';
-        highlight.style.transform = 'scale(0.5)';
-        
-        document.body.appendChild(highlight);
-        
-        // Create individual preview
-        const preview = document.createElement('div');
-        preview.className = 'word-preview';
-        preview.textContent = wordData.converted;
-        preview.style.opacity = '0';
-        preview.style.transform = 'scale(0.5)';
-        
-        // Position preview above word
-        const text = element.value || element.textContent || '';
-        const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
-        
-        if (isRTL) {
-          preview.style.left = (wordPosition.x + wordPosition.width) + 'px';
-          preview.style.top = (wordPosition.y - 35) + 'px';
-          preview.style.transform += ' translateX(-100%)';
-        } else {
-          preview.style.left = (wordPosition.x + wordPosition.width/2) + 'px';
-          preview.style.top = (wordPosition.y - 35) + 'px';
-          preview.style.transform += ' translateX(-50%)';
-        }
-        
-        document.body.appendChild(preview);
-        
-        wordData.highlightElement = highlight;
-        wordData.previewElement = preview;
-        highlights.push({ highlight, preview, wordData });
-        
+      // Create individual highlight
+      const highlight = document.createElement('div');
+      highlight.className = `wrong-word-highlight ${wordData.isArabic ? 'arabic' : 'english'}`;
+      highlight.style.left = wordPosition.x + 'px';
+      highlight.style.top = wordPosition.y + 'px';
+      highlight.style.width = wordPosition.width + 'px';
+      highlight.style.height = wordPosition.height + 'px';
+      highlight.style.borderRadius = '4px';
+      highlight.style.opacity = '0';
+      highlight.style.transform = 'scale(0.5)';
+      
+      document.body.appendChild(highlight);
+      
+      // Create individual preview
+      const preview = document.createElement('div');
+      preview.className = 'word-preview';
+      preview.textContent = wordData.converted;
+      preview.style.opacity = '0';
+      preview.style.transform = 'scale(0.5)';
+      
+      // Position preview above word
+      const text = element.value || element.textContent || '';
+      const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
+      
+      if (isRTL) {
+        preview.style.left = (wordPosition.x + wordPosition.width) + 'px';
+        preview.style.top = (wordPosition.y - 35) + 'px';
+        preview.style.transform += ' translateX(-100%)';
       } else {
-        // 🎆 MULTIPLE WORDS: Create beautiful merged box and label!
-        const mergedBox = this.createMergedHighlight(group, element);
-        const mergedPreview = this.createMergedPreview(group, element);
-        
-        document.body.appendChild(mergedBox);
-        document.body.appendChild(mergedPreview);
-        
-        // Store references for all words in the group
-        group.forEach(wordData => {
-          wordData.highlightElement = mergedBox;
-          wordData.previewElement = mergedPreview;
-        });
-        
-        highlights.push({ 
-          highlight: mergedBox, 
-          preview: mergedPreview, 
-          wordData: group[0], // Representative word
-          isGroup: true,
-          groupWords: group
-        });
+        preview.style.left = (wordPosition.x + wordPosition.width/2) + 'px';
+        preview.style.top = (wordPosition.y - 35) + 'px';
+        preview.style.transform += ' translateX(-50%)';
       }
+      
+      document.body.appendChild(preview);
+      
+      wordData.highlightElement = highlight;
+      wordData.previewElement = preview;
+      
+      this.animateSingleHighlight(highlight, preview);
+      
+    } else {
+      // 🎆 MULTIPLE WORDS: ONE UNIFIED BOX FOR ALL WORDS!
+      const unifiedBox = this.createUnifiedHighlightBox(wrongWords, element);
+      const unifiedLabel = this.createUnifiedPreviewLabel(wrongWords, element);
+      
+      document.body.appendChild(unifiedBox);
+      document.body.appendChild(unifiedLabel);
+      
+      // Store references for all words
+      wrongWords.forEach(wordData => {
+        wordData.highlightElement = unifiedBox;
+        wordData.previewElement = unifiedLabel;
+      });
+      
+      this.animateUnifiedHighlight(unifiedBox, unifiedLabel);
     }
+    
+    // Wait for animations to complete
+    await this.delay(800);
     
     // Epic staggered animation with Anime.js or fallback
     if (window.anime) {
@@ -827,116 +817,146 @@ class ModernLayoutDetector {
     return false;
   }
 
-  // 🎯 Group nearby words that should be merged together
-  groupNearbyWords(wrongWords, element) {
-    if (wrongWords.length === 0) return [];
-    
-    const groups = [];
-    const used = new Set();
-    const proximityThreshold = 50; // pixels - words closer than this get grouped
-    
-    for (let i = 0; i < wrongWords.length; i++) {
-      if (used.has(i)) continue;
-      
-      const currentGroup = [wrongWords[i]];
-      used.add(i);
-      
-      const currentPos = this.getPreciseWordPosition(element, wrongWords[i].start, wrongWords[i].end);
-      
-      // Find other words close to this one
-      for (let j = i + 1; j < wrongWords.length; j++) {
-        if (used.has(j)) continue;
-        
-        const otherPos = this.getPreciseWordPosition(element, wrongWords[j].start, wrongWords[j].end);
-        
-        // Check if words are close enough horizontally and on same line
-        const horizontalDistance = Math.abs(currentPos.x - otherPos.x);
-        const verticalDistance = Math.abs(currentPos.y - otherPos.y);
-        
-        if (horizontalDistance < proximityThreshold && verticalDistance < 10) {
-          currentGroup.push(wrongWords[j]);
-          used.add(j);
-        }
-      }
-      
-      groups.push(currentGroup);
-    }
-    
-    return groups;
-  }
-
-  // 🎆 Create a beautiful merged highlight box for grouped words
-  createMergedHighlight(wordGroup, element) {
-    const positions = wordGroup.map(word => 
+  // � Create ONE UNIFIED highlight box covering ALL wrong words
+  createUnifiedHighlightBox(wrongWords, element) {
+    const positions = wrongWords.map(word => 
       this.getPreciseWordPosition(element, word.start, word.end)
     );
     
-    // Calculate merged box dimensions
+    // Calculate unified box dimensions covering ALL words
     const minX = Math.min(...positions.map(p => p.x));
     const maxX = Math.max(...positions.map(p => p.x + p.width));
     const minY = Math.min(...positions.map(p => p.y));
     const maxY = Math.max(...positions.map(p => p.y + p.height));
     
-    const mergedBox = document.createElement('div');
-    mergedBox.className = 'wrong-word-highlight merged-highlight';
-    mergedBox.style.left = (minX - 4) + 'px'; // Add padding
-    mergedBox.style.top = (minY - 2) + 'px';
-    mergedBox.style.width = (maxX - minX + 8) + 'px';
-    mergedBox.style.height = (maxY - minY + 4) + 'px';
-    mergedBox.style.borderRadius = '6px';
-    mergedBox.style.opacity = '0';
-    mergedBox.style.transform = 'scale(0.5)';
-    mergedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(238, 90, 82, 0.15) 100%)';
-    mergedBox.style.border = '2px solid rgba(255, 107, 107, 0.4)';
-    mergedBox.style.boxShadow = '0 4px 20px rgba(255, 107, 107, 0.2)';
+    const unifiedBox = document.createElement('div');
+    unifiedBox.className = 'wrong-word-highlight unified-highlight';
+    unifiedBox.style.left = (minX - 8) + 'px'; // Extra padding
+    unifiedBox.style.top = (minY - 4) + 'px';
+    unifiedBox.style.width = (maxX - minX + 16) + 'px';
+    unifiedBox.style.height = (maxY - minY + 8) + 'px';
+    unifiedBox.style.borderRadius = '8px';
+    unifiedBox.style.opacity = '0';
+    unifiedBox.style.transform = 'scale(0.5)';
+    unifiedBox.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(238, 90, 82, 0.12) 100%)';
+    unifiedBox.style.border = '3px solid rgba(255, 107, 107, 0.6)';
+    unifiedBox.style.boxShadow = '0 8px 40px rgba(255, 107, 107, 0.3)';
+    unifiedBox.style.backdropFilter = 'blur(4px)';
+    unifiedBox.style.webkitBackdropFilter = 'blur(4px)';
     
-    return mergedBox;
+    return unifiedBox;
   }
 
-  // 🎆 Create a beautiful merged preview label for grouped words
-  createMergedPreview(wordGroup, element) {
-    const positions = wordGroup.map(word => 
+  // 🎆 Create ONE UNIFIED preview label showing ALL corrections
+  createUnifiedPreviewLabel(wrongWords, element) {
+    const positions = wrongWords.map(word => 
       this.getPreciseWordPosition(element, word.start, word.end)
     );
     
-    // Calculate center position for the merged preview
+    // Calculate center position for the unified label
     const minX = Math.min(...positions.map(p => p.x));
     const maxX = Math.max(...positions.map(p => p.x + p.width));
     const minY = Math.min(...positions.map(p => p.y));
     
     const centerX = (minX + maxX) / 2;
     
-    // Create merged text with arrows
-    const corrections = wordGroup.map(word => `${word.original} → ${word.converted}`);
-    const mergedText = corrections.join(' • ');
+    // Create unified text showing ALL corrections
+    const corrections = wrongWords.map(word => `${word.original} → ${word.converted}`);
+    const unifiedText = corrections.join(' • ');
     
-    const mergedPreview = document.createElement('div');
-    mergedPreview.className = 'word-preview merged-preview';
-    mergedPreview.innerHTML = mergedText;
-    mergedPreview.style.opacity = '0';
-    mergedPreview.style.transform = 'scale(0.5)';
-    mergedPreview.style.fontSize = '11px'; // Slightly smaller for merged labels
-    mergedPreview.style.maxWidth = '300px';
-    mergedPreview.style.padding = '8px 14px';
-    mergedPreview.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-    mergedPreview.style.border = '2px solid rgba(255,255,255,0.3)';
-    mergedPreview.style.boxShadow = '0 6px 25px rgba(0,0,0,0.4)';
+    const unifiedLabel = document.createElement('div');
+    unifiedLabel.className = 'word-preview unified-preview';
+    unifiedLabel.innerHTML = unifiedText;
+    unifiedLabel.style.opacity = '0';
+    unifiedLabel.style.transform = 'scale(0.5)';
+    unifiedLabel.style.fontSize = '10px';
+    unifiedLabel.style.maxWidth = '600px';
+    unifiedLabel.style.padding = '12px 20px';
+    unifiedLabel.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    unifiedLabel.style.border = '3px solid rgba(255,255,255,0.4)';
+    unifiedLabel.style.boxShadow = '0 12px 50px rgba(0,0,0,0.5)';
+    unifiedLabel.style.borderRadius = '12px';
+    unifiedLabel.style.fontWeight = '700';
+    unifiedLabel.style.backdropFilter = 'blur(10px)';
+    unifiedLabel.style.webkitBackdropFilter = 'blur(10px)';
     
-    // Position above the merged box
+    // Position above the unified box center
     const text = element.value || element.textContent || '';
     const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
     
     if (isRTL) {
-      mergedPreview.style.left = maxX + 'px';
-      mergedPreview.style.top = (minY - 45) + 'px';
-      mergedPreview.style.transform += ' translateX(-100%)';
+      unifiedLabel.style.left = maxX + 'px';
+      unifiedLabel.style.top = (minY - 60) + 'px';
+      unifiedLabel.style.transform += ' translateX(-100%)';
     } else {
-      mergedPreview.style.left = centerX + 'px';
-      mergedPreview.style.top = (minY - 45) + 'px';
-      mergedPreview.style.transform += ' translateX(-50%)';
+      unifiedLabel.style.left = centerX + 'px';
+      unifiedLabel.style.top = (minY - 60) + 'px';
+      unifiedLabel.style.transform += ' translateX(-50%)';
     }
     
-    return mergedPreview;
+    return unifiedLabel;
+  }
+
+  // 🎆 Animate single word highlight
+  animateSingleHighlight(highlight, preview) {
+    if (window.anime) {
+      anime({
+        targets: highlight,
+        opacity: [0, 1],
+        scale: [0.5, 1.1, 1],
+        duration: 600,
+        easing: 'easeOutElastic(1, .8)',
+        complete: () => highlight.classList.add('detected')
+      });
+      
+      anime({
+        targets: preview,
+        opacity: [0, 1],
+        scale: [0.5, 1],
+        duration: 400,
+        delay: 300,
+        easing: 'easeOutBack'
+      });
+    } else {
+      highlight.style.transition = 'all 0.6s ease';
+      highlight.style.opacity = '1';
+      highlight.style.transform = 'scale(1)';
+      preview.style.transition = 'all 0.4s ease';
+      preview.style.opacity = '1';
+      preview.style.transform = preview.style.transform.replace('scale(0.5)', 'scale(1)');
+    }
+  }
+
+  // 🎆 Animate unified highlight with EPIC effects
+  animateUnifiedHighlight(unifiedBox, unifiedLabel) {
+    if (window.anime) {
+      anime({
+        targets: unifiedBox,
+        opacity: [0, 1],
+        scale: [0.3, 1.2, 1],
+        duration: 800,
+        easing: 'easeOutElastic(1, .6)',
+        complete: () => unifiedBox.classList.add('detected')
+      });
+      
+      anime({
+        targets: unifiedLabel,
+        opacity: [0, 1],
+        scale: [0.3, 1.1, 1],
+        duration: 600,
+        delay: 400,
+        easing: 'easeOutBack'
+      });
+    } else {
+      unifiedBox.style.transition = 'all 0.8s ease';
+      unifiedBox.style.opacity = '1';
+      unifiedBox.style.transform = 'scale(1)';
+      setTimeout(() => {
+        unifiedLabel.style.transition = 'all 0.6s ease';
+        unifiedLabel.style.opacity = '1';
+        unifiedLabel.style.transform = unifiedLabel.style.transform.replace('scale(0.5)', 'scale(1)');
+      }, 400);
+    }
   }
 
   isInputElement(element) {
