@@ -37,21 +37,15 @@ const loadLibraries = () => {
 
 class ModernLayoutDetector {
   constructor() {
-    this.tooltip = null;
-    this.toggleButton = null;
     this.undoButton = null;
     this.currentElement = null;
     this.currentWordData = null;
-    this.hideTimeout = null;
-    this.isTooltipHovered = false;
     this.replacedWords = new Set();
-    this.wordPosition = null;
-    this.hoverReplaceTimeout = null;
-    this.autoCorrectMode = false;
     this.undoHistory = [];
     this.isCorrectingNow = false;
     this.lastCorrectedText = new Map();
     this.correctionCooldown = new Set();
+    this.pauseExtension = false;
     
     // Whitelists for valid single characters
     this.arabicSingleWords = new Set(['و', 'ا', 'ب', 'ل', 'ف', 'ك', 'م', 'ن', 'ه', 'ي', 'ت', 'ر', 'ع', 'ح']);
@@ -62,34 +56,94 @@ class ModernLayoutDetector {
 
   async init() {
     await loadLibraries();
-    this.createToggleButton();
-    this.createTooltip();
+    
+    // Load pause setting from chrome.storage
+    if (window.chrome && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.get(['pauseExtension'], (data) => {
+        this.pauseExtension = !!data.pauseExtension;
+      });
+      
+      // Listen for storage changes
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'sync' && changes.pauseExtension) {
+          this.pauseExtension = changes.pauseExtension.newValue;
+        }
+      });
+    }
+    
+    // Listen for messages from popup
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (this.pauseExtension) {
+        sendResponse({success: false, message: 'Extension is paused'});
+        return;
+      }
+      
+      if (request.action === 'fixCurrentWord') {
+        this.fixCurrentWord(sendResponse);
+        return true; // Keep message channel open for async response
+      } else if (request.action === 'autoFixAll') {
+        this.autoFixAllWords(sendResponse);
+        return true; // Keep message channel open for async response
+      }
+    });
+    
     this.createUndoButton();
-    document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-    document.addEventListener('mouseout', this.handleMouseOut.bind(this));
     document.addEventListener('keydown', this.handleKeydown.bind(this));
     console.log('🚀 Modern Layout Detector loaded with libraries!');
   }
 
-  createToggleButton() {
-    this.toggleButton = document.createElement('div');
-    this.toggleButton.className = 'auto-correct-toggle';
-    this.toggleButton.innerHTML = `
-      <div class="toggle-content">
-        <span class="toggle-icon">⚡</span>
-        <span class="toggle-text">Auto-Fix</span>
-        <div class="toggle-switch">
-          <div class="toggle-slider"></div>
-        </div>
-      </div>
-    `;
-    this.toggleButton.style.display = 'none';
-
-    this.toggleButton.addEventListener('click', () => {
-      this.toggleAutoCorrect();
-    });
-
-    document.body.appendChild(this.toggleButton);
+  // Fix current word at cursor position
+  fixCurrentWord(sendResponse) {
+    const element = document.activeElement;
+    if (!this.isInputElement(element)) {
+      sendResponse({success: false, message: 'No input field is focused'});
+      return;
+    }
+    
+    const foundWord = this.getWordAtCaret(element);
+    if (!foundWord) {
+      sendResponse({success: false, message: 'No word found at cursor'});
+      return;
+    }
+    
+    // Apply the word correction
+    this.currentElement = element;
+    this.currentWordData = foundWord;
+    this.replaceWord();
+    
+    this.showNotification(`✅ Fixed: "${foundWord.original}" → "${foundWord.converted}"`, 'success');
+    sendResponse({success: true, original: foundWord.original, converted: foundWord.converted});
+  }
+  
+  // Auto-fix all wrong words in the current input field
+  async autoFixAllWords(sendResponse) {
+    const element = document.activeElement;
+    if (!this.isInputElement(element)) {
+      sendResponse({success: false, message: 'No input field is focused'});
+      return;
+    }
+    
+    if (this.isCorrectingNow) {
+      sendResponse({success: false, message: 'Correction already in progress'});
+      return;
+    }
+    
+    this.isCorrectingNow = true;
+    
+    // Find and fix all wrong words
+    const wrongWords = this.findWrongWords(element);
+    
+    if (wrongWords.length === 0) {
+      this.isCorrectingNow = false;
+      sendResponse({success: true, count: 0, message: 'No wrong words found'});
+      return;
+    }
+    
+    // Apply corrections with animation
+    await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
+    
+    this.isCorrectingNow = false;
+    sendResponse({success: true, count: wrongWords.length});
   }
 
   createUndoButton() {
@@ -106,95 +160,6 @@ class ModernLayoutDetector {
     });
 
     document.body.appendChild(this.undoButton);
-  }
-
-  createTooltip() {
-    this.tooltip = document.createElement('div');
-    this.tooltip.className = 'layout-tooltip';
-    this.tooltip.style.display = 'none';
-
-    this.tooltip.addEventListener('mouseenter', () => {
-      this.isTooltipHovered = true;
-      this.clearHideTimeout();
-      
-      if (!this.autoCorrectMode) {
-        this.hoverReplaceTimeout = setTimeout(() => {
-          this.replaceWord();
-        }, 1500);
-      }
-    });
-
-    this.tooltip.addEventListener('mouseleave', () => {
-      this.isTooltipHovered = false;
-      this.scheduleHide();
-      
-      if (this.hoverReplaceTimeout) {
-        clearTimeout(this.hoverReplaceTimeout);
-        this.hoverReplaceTimeout = null;
-      }
-    });
-
-    this.tooltip.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (this.hoverReplaceTimeout) {
-        clearTimeout(this.hoverReplaceTimeout);
-        this.hoverReplaceTimeout = null;
-      }
-      
-      this.replaceWord();
-    });
-
-    document.body.appendChild(this.tooltip);
-  }
-
-  toggleAutoCorrect() {
-    this.autoCorrectMode = !this.autoCorrectMode;
-    
-    const slider = this.toggleButton.querySelector('.toggle-slider');
-    const toggleText = this.toggleButton.querySelector('.toggle-text');
-    
-    if (this.autoCorrectMode) {
-      this.toggleButton.classList.add('active');
-      
-      // Smooth slider animation with Anime.js or fallback
-      if (window.anime) {
-        anime({
-          targets: slider,
-          translateX: 20,
-          duration: 300,
-          easing: 'easeOutCubic'
-        });
-      } else {
-        slider.style.transform = 'translateX(20px)';
-        slider.style.transition = 'transform 0.3s ease';
-      }
-      
-      toggleText.textContent = 'Auto-Fix ON';
-      this.showNotification('🚀 Auto-correction enabled! Press Ctrl+Shift for epic scanning animation.', 'success');
-    } else {
-      this.toggleButton.classList.remove('active');
-      
-      // Smooth slider animation or fallback
-      if (window.anime) {
-        anime({
-          targets: slider,
-          translateX: 0,
-          duration: 300,
-          easing: 'easeOutCubic'
-        });
-      } else {
-        slider.style.transform = 'translateX(0px)';
-        slider.style.transition = 'transform 0.3s ease';
-      }
-      
-      toggleText.textContent = 'Auto-Fix OFF';
-      this.showNotification('Auto-correction disabled. Click words manually to fix.', 'info');
-      
-      this.lastCorrectedText.clear();
-      this.correctionCooldown.clear();
-    }
   }
 
   showNotification(message, type = 'info') {
@@ -277,21 +242,6 @@ class ModernLayoutDetector {
       if (this.undoHistory.length > 0) {
         event.preventDefault();
         this.undoLastCorrection();
-      }
-      return;
-    }
-    
-    // Ctrl+Shift for Epic Progressive Highlighting Animation
-    if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey) {
-      const element = document.activeElement;
-      if (this.isInputElement(element)) {
-        event.preventDefault();
-        
-        if (this.autoCorrectMode) {
-          this.startEpicProgressiveHighlighting(element);
-        } else {
-          this.showNotification('⚠️ Auto-correction is disabled. Enable it first by clicking the toggle button.', 'warning');
-        }
       }
       return;
     }
@@ -886,132 +836,6 @@ class ModernLayoutDetector {
     };
   }
 
-  clearHideTimeout() {
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
-      this.hideTimeout = null;
-    }
-  }
-
-  scheduleHide() {
-    this.clearHideTimeout();
-
-    this.hideTimeout = setTimeout(() => {
-      if (!this.isTooltipHovered) {
-        this.hideTooltip();
-      }
-    }, 50);
-  }
-
-  handleMouseMove(event) {
-    const element = event.target;
-
-    if (this.isInputElement(element)) {
-      this.showToggleButton(element);
-    } else {
-      this.hideToggleButton();
-    }
-
-    this.clearHideTimeout();
-
-    if (!this.isInputElement(element) || this.autoCorrectMode) {
-      this.scheduleHide();
-      return;
-    }
-
-    if (document.activeElement !== element) {
-      this.scheduleHide();
-      return;
-    }
-
-    const foundWord = this.getWordAtCaret(element);
-
-    if (foundWord) {
-      this.currentElement = element;
-      this.currentWordData = foundWord;
-
-      const wordPos = this.getWordPositionInElement(element, foundWord.start, foundWord.end);
-      this.wordPosition = wordPos;
-
-      this.showTooltipAboveWord(foundWord.converted, wordPos);
-    } else {
-      this.scheduleHide();
-    }
-  }
-
-  showToggleButton(element) {
-    const rect = element.getBoundingClientRect();
-    
-    this.toggleButton.style.display = 'block';
-    this.toggleButton.style.left = (rect.right - 120) + 'px';
-    this.toggleButton.style.top = (rect.top - 45) + 'px';
-  }
-
-  hideToggleButton() {
-    setTimeout(() => {
-      if (!this.toggleButton.matches(':hover')) {
-        this.toggleButton.style.display = 'none';
-      }
-    }, 100);
-  }
-
-  handleMouseOut(event) {
-    const element = event.target;
-    const relatedTarget = event.relatedTarget;
-
-    if (this.isInputElement(element)) {
-      if (relatedTarget && (relatedTarget === this.tooltip || this.tooltip.contains(relatedTarget))) {
-        return;
-      }
-
-      this.scheduleHide();
-    }
-  }
-
-  showTooltipAboveWord(text, wordPos) {
-    const word = this.currentWordData.original;
-    
-    if (this.autoCorrectMode) {
-      if (word.length === 1) {
-        const isArabic = this.hasArabic(word);
-        const isWhitelisted = isArabic ? this.arabicSingleWords.has(word) : this.englishSingleWords.has(word);
-        
-        if (isWhitelisted) {
-          this.tooltip.textContent = `"${word}" is valid - Press Ctrl+Shift for EPIC scan & fix, or click to convert "${word}" to "${text}"`;
-        } else {
-          this.tooltip.textContent = `Press Ctrl+Shift for EPIC scan & fix, or click to convert "${word}" to "${text}"`;
-        }
-      } else {
-        this.tooltip.textContent = `Press Ctrl+Shift for EPIC scan & fix, or click to convert "${word}" to "${text}"`;
-      }
-    } else {
-      this.tooltip.textContent = `Click to change to: ${text}`;
-    }
-    
-    this.tooltip.style.display = 'block';
-
-    const tooltipX = Math.max(10, Math.min(wordPos.x, window.innerWidth - 400));
-    const tooltipY = Math.max(10, wordPos.y - 60);
-
-    this.tooltip.style.left = tooltipX + 'px';
-    this.tooltip.style.top = tooltipY + 'px';
-    this.tooltip.style.position = 'fixed';
-  }
-
-  hideTooltip() {
-    this.tooltip.style.display = 'none';
-    this.currentElement = null;
-    this.currentWordData = null;
-    this.isTooltipHovered = false;
-    this.wordPosition = null;
-    this.clearHideTimeout();
-    
-    if (this.hoverReplaceTimeout) {
-      clearTimeout(this.hoverReplaceTimeout);
-      this.hoverReplaceTimeout = null;
-    }
-  }
-
   replaceWord() {
     if (!this.currentElement || !this.currentWordData) return;
 
@@ -1038,8 +862,6 @@ class ModernLayoutDetector {
       element.textContent = newText;
       element.focus();
     }
-
-    this.hideTooltip();
 
     setTimeout(() => {
       if (this.replacedWords.size > 10) {

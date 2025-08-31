@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Keyboard Layout Detector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <h2>🔤 Layout Detector</h2>
+    
+    <button id="fixCurrentWord" class="action-btn primary">
+      <span class="btn-icon">🎯</span>
+      Fix Current Word
+    </button>
+    
+    <button id="autoFixAll" class="action-btn secondary">
+      <span class="btn-icon">⚡</span>
+      Auto-Fix All Words
+    </button>
+    
+    <div class="divider"></div>
+    
+    <label class="switch">
+      <input type="checkbox" id="pauseExtension">
+      <span class="slider"></span>
+      Pause Extension
+    </label>
+    
+    <div id="status" class="status"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
