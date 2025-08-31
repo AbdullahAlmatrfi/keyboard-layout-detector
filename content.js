@@ -249,8 +249,8 @@ class ModernLayoutDetector {
       return;
     }
     
-    // Ctrl+Shift for Epic Auto-Fix All
-    if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey) {
+    // Ctrl+Alt for Epic Auto-Fix All
+    if (event.ctrlKey && event.altKey && !event.shiftKey && !event.metaKey) {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
         event.preventDefault();
