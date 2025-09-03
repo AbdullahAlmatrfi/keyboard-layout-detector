@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Layout Detector Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .instructions {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-case {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎹 Keyboard Layout Detector Test Page</h1>
+    
+    <div class="instructions">
+        <h2>How to Test:</h2>
+        <ol>
+            <li>Make sure the extension is loaded and enabled</li>
+            <li>Type or paste test text in the inputs below</li>
+            <li>Click the extension icon and press "Scan & Correct"</li>
+            <li>Check if the extension correctly detects and converts keyboard layout mistakes</li>
+        </ol>
+    </div>
+
+    <div class="test-case">
+        <h3>Test Case 1: Arabic text typed on English keyboard</h3>
+        <p>Type Arabic words but on English keyboard (they will look like English letters)</p>
+        <input type="text" class="test-input" placeholder="Try typing Arabic on English keyboard...">
+    </div>
+
+    <div class="test-case">
+        <h3>Test Case 2: English text typed on Arabic keyboard</h3>
+        <p>Type English words but on Arabic keyboard</p>
+        <input type="text" class="test-input" placeholder="Try typing English on Arabic keyboard...">
+    </div>
+
+    <div class="test-case">
+        <h3>Test Case 3: Mixed text</h3>
+        <p>Mix of correct and incorrect keyboard layouts</p>
+        <textarea class="test-input" placeholder="Type mixed content here..."></textarea>
+    </div>
+
+    <div class="test-case">
+        <h3>Test Case 4: Already correct text</h3>
+        <p>This should NOT be changed by the extension</p>
+        <input type="text" class="test-input" value="hello world this is correct English" readonly>
+    </div>
+
+    <div class="test-case">
+        <h3>Test Case 5: Re-correction test</h3>
+        <p>After correcting text once, it should NOT be corrected again</p>
+        <input type="text" class="test-input" placeholder="Type something to correct, then try scanning again...">
+    </div>
+
+    <script src="debug.js"></script>
+    <script>
+        // Add some helpful logging
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎹 Test page loaded! Extension should be active.');
+            
+            // Log when inputs are focused
+            document.querySelectorAll('.test-input').forEach((input, index) => {
+                input.addEventListener('focus', function() {
+                    console.log(`📝 Focused on test input ${index + 1}:`, this.tagName);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

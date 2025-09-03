@@ -322,13 +322,8 @@ class ModernLayoutDetector {
       return [];
     }
     
-    // 🧠 SMART DETECTION: Use smart corrections if available
-    if (smartAnalysis.wrongWords && smartAnalysis.wrongWords.length > 0) {
-      console.log(`🧠 Smart Detection: Using ${smartAnalysis.wrongWords.length} smart corrections`);
-      // Mark as processed to prevent re-correction
-      this.smartDetector.markAsProcessed(text, element, smartAnalysis.wrongWords);
-      return smartAnalysis.wrongWords;
-    }
+    // Proceed with normal detection (no smart shortcuts for first-time corrections)
+    console.log('🔍 Proceeding with normal word detection...');
     
     // Fallback to original detection method
     const words = text.split(/(\s+)/);
@@ -536,6 +531,11 @@ class ModernLayoutDetector {
     
     // Focus the element to ensure changes are visible
     element.focus();
+    
+    // 🧠 SMART DETECTION: Mark this text as processed to prevent re-correction
+    const fingerprint = this.smartDetector.createTextFingerprint(correctedText, element);
+    this.smartDetector.textFingerprints.add(fingerprint);
+    console.log('🧠 Smart Detection: Added fingerprint for corrected text to prevent re-correction');
     
     console.log('✅ Text correction applied successfully!');
     
@@ -939,50 +939,14 @@ class SmartStatementDetector {
       return { shouldProcess: false, reason: 'recently_corrected' };
     }
     
-    // Skip if this is protected content
+    // Skip if this is protected content (URLs, emails, etc.)
     if (this.isProtectedContent(text)) {
       return { shouldProcess: false, reason: 'protected_content' };
     }
     
-    // 🔧 FIX: Quick check for completely valid text
-    const trimmedText = text.trim();
-    const isCompletelyEnglish = /^[a-zA-Z\s.,!?-]+$/.test(trimmedText);
-    const isCompletelyArabic = /^[\u0600-\u06FF\u0750-\u077F\s.,!?-]+$/.test(trimmedText);
-    
-    if (isCompletelyEnglish || isCompletelyArabic) {
-      console.log(`🧠 Smart Detection: Text is completely valid ${isCompletelyEnglish ? 'English' : 'Arabic'} - skipping`);
-      return { shouldProcess: false, reason: 'completely_valid_text' };
-    }
-    
-    const analysis = this.performDeepAnalysis(text);
-    
-    // Check for early exit based on analysis
-    if (analysis.skipReason) {
-      console.log(`🧠 Smart Detection: ${analysis.skipReason}`);
-      return { shouldProcess: false, reason: analysis.skipReason };
-    }
-    
-    // Decision logic
-    if (analysis.isCompletelyWrong) {
-      console.log(`🧠 Smart Detection: Complete layout mistake detected (${Math.round(analysis.confidence * 100)}% confidence)`);
-      this.textFingerprints.add(fingerprint);
-      return { 
-        shouldProcess: true, 
-        confidence: analysis.confidence,
-        type: 'complete_correction',
-        wrongWords: analysis.wrongWords
-      };
-    } else if (analysis.hasMixedErrors && analysis.errorRatio > 0.3) {
-      console.log(`🧠 Smart Detection: Mixed errors detected (${Math.round(analysis.confidence * 100)}% confidence)`);
-      return { 
-        shouldProcess: true, 
-        confidence: analysis.confidence * 0.7,
-        type: 'selective_correction',
-        wrongWords: analysis.wrongWords.slice(0, 5) // Limit to 5 words max
-      };
-    }
-    
-    return { shouldProcess: false, reason: 'low_confidence' };
+    // ✅ Allow all other text to be processed by normal detection
+    console.log('✅ Smart Detection: Text cleared for processing');
+    return { shouldProcess: true, reason: 'ready_for_processing' };
   }
   
   performDeepAnalysis(text) {
