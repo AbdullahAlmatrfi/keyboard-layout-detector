@@ -20,6 +20,9 @@ class ModernLayoutDetector {
     this.arabicSingleWords = new Set(['و', 'ا', 'ب', 'ل', 'ف', 'ك', 'م', 'ن', 'ه', 'ي', 'ت', 'ر', 'ع', 'ح']);
     this.englishSingleWords = new Set(['I', 'a', 'A']);
     
+    // 🧠 Initialize Smart Statement Detection System
+    this.smartDetector = new SmartStatementDetector(this);
+    
     this.init();
   }
 
@@ -312,6 +315,22 @@ class ModernLayoutDetector {
     console.log('🔍 DEBUG: findWrongWords called with text:', { text, elementType: element.tagName });
     if (!text) return [];
     
+    // 🧠 SMART DETECTION: Check if we should process this text
+    const smartAnalysis = this.smartDetector.analyzeTextStatement(text, element);
+    if (!smartAnalysis.shouldProcess) {
+      console.log(`🧠 Smart Detection: Skipping - ${smartAnalysis.reason}`);
+      return [];
+    }
+    
+    // 🧠 SMART DETECTION: Use smart corrections if available
+    if (smartAnalysis.wrongWords && smartAnalysis.wrongWords.length > 0) {
+      console.log(`🧠 Smart Detection: Using ${smartAnalysis.wrongWords.length} smart corrections`);
+      // Mark as processed to prevent re-correction
+      this.smartDetector.markAsProcessed(text, element, smartAnalysis.wrongWords);
+      return smartAnalysis.wrongWords;
+    }
+    
+    // Fallback to original detection method
     const words = text.split(/(\s+)/);
     console.log('🔍 DEBUG: Split words:', words);
     const wrongWords = [];
@@ -887,6 +906,303 @@ class ModernLayoutDetector {
         this.replacedWords.clear();
       }
     }, 5000);
+  }
+}
+
+// 🧠 Smart Statement Detection Algorithm - Prevents Re-correction Issues
+class SmartStatementDetector {
+  constructor(layoutDetector) {
+    this.layoutDetector = layoutDetector;
+    this.wrongLayoutThreshold = 0.7; // 70% wrong = complete layout mistake
+    this.correctedTexts = new Map(); // Track what we've already corrected
+    this.textFingerprints = new Set(); // Prevent re-correction
+    this.contextPatterns = {
+      completelyWrong: /^[\u0600-\u06FF\s]{10,}$|^[a-zA-Z\s]{10,}$/,
+      mixedContent: /[\u0600-\u06FF].*[a-zA-Z]|[a-zA-Z].*[\u0600-\u06FF]/,
+      urls: /https?:\/\/|www\.|\.com|\.org|\.net|\.edu/i,
+      emails: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+      code: /[{}();]|function|const|let|var|class|import|export/
+    };
+  }
+  
+  analyzeTextStatement(text, element) {
+    // Create fingerprint to prevent re-processing same text
+    const fingerprint = this.createTextFingerprint(text, element);
+    if (this.textFingerprints.has(fingerprint)) {
+      console.log('🔄 Smart Detection: Skipping already processed text');
+      return { shouldProcess: false, reason: 'already_processed' };
+    }
+    
+    // Skip if this was recently corrected
+    if (this.wasRecentlyCorrected(text, element)) {
+      console.log('⏭️ Smart Detection: Skipping recently corrected text');
+      return { shouldProcess: false, reason: 'recently_corrected' };
+    }
+    
+    // Skip if this is protected content
+    if (this.isProtectedContent(text)) {
+      return { shouldProcess: false, reason: 'protected_content' };
+    }
+    
+    // 🔧 FIX: Quick check for completely valid text
+    const trimmedText = text.trim();
+    const isCompletelyEnglish = /^[a-zA-Z\s.,!?-]+$/.test(trimmedText);
+    const isCompletelyArabic = /^[\u0600-\u06FF\u0750-\u077F\s.,!?-]+$/.test(trimmedText);
+    
+    if (isCompletelyEnglish || isCompletelyArabic) {
+      console.log(`🧠 Smart Detection: Text is completely valid ${isCompletelyEnglish ? 'English' : 'Arabic'} - skipping`);
+      return { shouldProcess: false, reason: 'completely_valid_text' };
+    }
+    
+    const analysis = this.performDeepAnalysis(text);
+    
+    // Check for early exit based on analysis
+    if (analysis.skipReason) {
+      console.log(`🧠 Smart Detection: ${analysis.skipReason}`);
+      return { shouldProcess: false, reason: analysis.skipReason };
+    }
+    
+    // Decision logic
+    if (analysis.isCompletelyWrong) {
+      console.log(`🧠 Smart Detection: Complete layout mistake detected (${Math.round(analysis.confidence * 100)}% confidence)`);
+      this.textFingerprints.add(fingerprint);
+      return { 
+        shouldProcess: true, 
+        confidence: analysis.confidence,
+        type: 'complete_correction',
+        wrongWords: analysis.wrongWords
+      };
+    } else if (analysis.hasMixedErrors && analysis.errorRatio > 0.3) {
+      console.log(`🧠 Smart Detection: Mixed errors detected (${Math.round(analysis.confidence * 100)}% confidence)`);
+      return { 
+        shouldProcess: true, 
+        confidence: analysis.confidence * 0.7,
+        type: 'selective_correction',
+        wrongWords: analysis.wrongWords.slice(0, 5) // Limit to 5 words max
+      };
+    }
+    
+    return { shouldProcess: false, reason: 'low_confidence' };
+  }
+  
+  performDeepAnalysis(text) {
+    const words = text.split(/\s+/).filter(word => word.length > 0);
+    const wrongWords = [];
+    let arabicCount = 0;
+    let englishCount = 0;
+    let mixedCount = 0;
+    let validWords = 0; // Track words that are already correct
+    
+    words.forEach((word, index) => {
+      const cleanWord = word.replace(/[^\u0600-\u06FF\u0750-\u077Fa-zA-Z]/g, '');
+      if (cleanWord.length < 2) return; // Skip very short words
+      
+      const converted = this.layoutDetector.convertText(cleanWord);
+      const isWrong = converted !== cleanWord && this.layoutDetector.shouldAutoCorrect(cleanWord, converted);
+      
+      // 🔧 FIX: Check if word is already in correct language/format
+      const isValidEnglish = /^[a-zA-Z]+$/.test(cleanWord) && cleanWord.length > 1;
+      const isValidArabic = /^[\u0600-\u06FF\u0750-\u077F]+$/.test(cleanWord) && cleanWord.length > 1;
+      
+      if (isValidEnglish || isValidArabic) {
+        validWords++;
+      }
+      
+      if (isWrong) {
+        const position = text.indexOf(word);
+        wrongWords.push({
+          original: cleanWord,
+          converted: converted,
+          start: position,
+          end: position + word.length,
+          isArabic: this.layoutDetector.hasArabic(cleanWord),
+          wordIndex: index
+        });
+      }
+      
+      // Count language distribution
+      if (this.layoutDetector.hasArabic(cleanWord)) arabicCount++;
+      else if (/[a-zA-Z]/.test(cleanWord)) englishCount++;
+      if (/[\u0600-\u06FF].*[a-zA-Z]|[a-zA-Z].*[\u0600-\u06FF]/.test(cleanWord)) mixedCount++;
+    });
+    
+    const totalWords = words.length;
+    const wrongRatio = wrongWords.length / totalWords;
+    const validRatio = validWords / totalWords;
+    const dominantLanguage = arabicCount > englishCount ? 'arabic' : 'english';
+    
+    // 🔧 FIX: If most words are already valid, don't process
+    if (validRatio > 0.7) { // 70% of words are already correct
+      console.log(`🧠 Smart Detection: Text is mostly valid (${Math.round(validRatio * 100)}% correct words)`);
+      return {
+        isCompletelyWrong: false,
+        hasMixedErrors: false,
+        errorRatio: 0,
+        confidence: 0,
+        wrongWords: [],
+        dominantLanguage,
+        skipReason: 'mostly_valid_text',
+        statistics: {
+          totalWords,
+          wrongWords: 0,
+          validWords,
+          arabicWords: arabicCount,
+          englishWords: englishCount,
+          mixedWords: mixedCount
+        }
+      };
+    }
+    
+    // Determine if completely wrong (entire text in wrong layout)
+    const isCompletelyWrong = wrongRatio >= this.wrongLayoutThreshold && 
+                              mixedCount < (totalWords * 0.2) && // Less than 20% mixed words
+                              totalWords >= 3 && // Minimum 3 words for statement
+                              validRatio < 0.3; // Less than 30% valid words
+    
+    return {
+      isCompletelyWrong,
+      hasMixedErrors: wrongWords.length > 0 && !isCompletelyWrong,
+      errorRatio: wrongRatio,
+      confidence: this.calculateConfidence(wrongRatio, dominantLanguage, mixedCount, totalWords, validRatio),
+      wrongWords,
+      dominantLanguage,
+      statistics: {
+        totalWords,
+        wrongWords: wrongWords.length,
+        validWords,
+        arabicWords: arabicCount,
+        englishWords: englishCount,
+        mixedWords: mixedCount
+      }
+    };
+  }
+  
+  calculateConfidence(wrongRatio, dominantLanguage, mixedCount, totalWords, validRatio = 0) {
+    let confidence = wrongRatio; // Base confidence on error ratio
+    
+    // 🔧 FIX: Reduce confidence significantly if text has many valid words
+    if (validRatio > 0.5) confidence *= (1 - validRatio); // Reduce confidence based on valid words
+    
+    // Boost confidence for clear patterns
+    if (wrongRatio > 0.8) confidence += 0.15; // Very high error rate
+    if (mixedCount === 0) confidence += 0.1;   // No mixed language words
+    if (totalWords >= 5) confidence += 0.05;   // Longer statements more reliable
+    
+    // Reduce confidence for uncertain cases
+    if (mixedCount > totalWords * 0.3) confidence -= 0.2; // Too much mixing
+    if (totalWords < 3) confidence -= 0.3; // Too short to be reliable
+    if (validRatio > 0.6) confidence -= 0.4; // Too many valid words
+    
+    return Math.min(0.95, Math.max(0.1, confidence));
+  }
+  
+  createTextFingerprint(text, element) {
+    // Create unique fingerprint based on text content and element
+    const elementId = element.id || element.name || element.className || 'unknown';
+    const textHash = btoa(text.substring(0, 100)).substring(0, 20); // First 100 chars
+    return `${elementId}_${textHash}_${text.length}`;
+  }
+  
+  isProtectedContent(text) {
+    // Check against protection patterns
+    for (const [type, pattern] of Object.entries(this.contextPatterns)) {
+      if (type !== 'completelyWrong' && type !== 'mixedContent' && pattern.test(text)) {
+        console.log(`🛡️ Smart Detection: Protected content detected: ${type}`);
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  markAsProcessed(text, element, corrections) {
+    const elementKey = this.getElementKey(element);
+    this.correctedTexts.set(elementKey, {
+      originalText: text,
+      correctedText: this.applyCorrections(text, corrections),
+      timestamp: Date.now(),
+      corrections: corrections
+    });
+    
+    console.log(`📝 Smart Detection: Marked text as processed for element ${elementKey}`);
+  }
+  
+  wasRecentlyCorrected(text, element) {
+    const elementKey = this.getElementKey(element);
+    const recent = this.correctedTexts.get(elementKey);
+    
+    if (!recent) return false;
+    
+    // Check if current text matches recently corrected text
+    const timeDiff = Date.now() - recent.timestamp;
+    const textSimilarity = this.calculateTextSimilarity(text, recent.correctedText);
+    
+    const isRecent = timeDiff < 5000 && textSimilarity > 0.8; // 5 seconds, 80% similar
+    
+    if (isRecent) {
+      console.log(`⏰ Smart Detection: Text was recently corrected (${Math.round(timeDiff/1000)}s ago, ${Math.round(textSimilarity*100)}% similar)`);
+    }
+    
+    return isRecent;
+  }
+  
+  calculateTextSimilarity(text1, text2) {
+    if (text1 === text2) return 1.0;
+    
+    const longer = text1.length > text2.length ? text1 : text2;
+    const shorter = text1.length > text2.length ? text2 : text1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    return (longer.length - this.levenshteinDistance(longer, shorter)) / longer.length;
+  }
+  
+  levenshteinDistance(str1, str2) {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  }
+  
+  applyCorrections(text, corrections) {
+    let correctedText = text;
+    
+    // Apply corrections from end to start to maintain positions
+    const sortedCorrections = corrections.sort((a, b) => b.start - a.start);
+    for (const correction of sortedCorrections) {
+      correctedText = correctedText.substring(0, correction.start) +
+                     correction.converted +
+                     correctedText.substring(correction.end);
+    }
+    
+    return correctedText;
+  }
+  
+  getElementKey(element) {
+    if (!element._smartDetectorId) {
+      element._smartDetectorId = 'sd_' + Math.random().toString(36).substr(2, 9);
+    }
+    return element._smartDetectorId;
   }
 }
 
