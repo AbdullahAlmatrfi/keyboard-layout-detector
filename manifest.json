@@ -11,6 +11,7 @@
       "matches": [
         "<all_urls>"
       ],
+      "all_frames": true,
       "js": [
         "fa-layout.js",
         "content.js"

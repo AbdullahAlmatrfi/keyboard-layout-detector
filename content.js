@@ -1,19 +1,10 @@
-// Initialize the detector without loading external libraries
-const initializeDetector = () => {
-  console.log('🚀 Modern Layout Detector starting...');
-  new ModernLayoutDetector();
-};
-
 class ModernLayoutDetector {
   constructor() {
     this.undoButton = null;
     this.currentElement = null;
     this.currentWordData = null;
-    this.replacedWords = new Set();
     this.undoHistory = [];
     this.isCorrectingNow = false;
-    this.lastCorrectedText = new Map();
-    this.correctionCooldown = new Set();
     this.pauseExtension = false;
 
     // Dictionary sets for word validation (L14)
@@ -78,34 +69,42 @@ class ModernLayoutDetector {
       }
 
       this.createUndoButton();
-      document.addEventListener('keydown', this.handleKeydown.bind(this));
+      // Use capture phase (true) so our shortcuts fire BEFORE sites like Gmail can block them
+      document.addEventListener('keydown', this.handleKeydown.bind(this), true);
       console.log('🚀 Modern Layout Detector loaded!');
     } catch (e) {
       console.warn('⚠️ Layout Detector: init failed (likely a restricted page):', e.message);
     }
   }
 
+  // ─── POPUP MESSAGE HANDLERS ───────────────────────────────────────
+
   // Fix current word at cursor position
   fixCurrentWord(sendResponse) {
-    const element = document.activeElement;
-    if (!this.isInputElement(element)) {
-      sendResponse({ success: false, message: 'No input field is focused' });
-      return;
+    try {
+      const element = document.activeElement;
+      if (!this.isInputElement(element)) {
+        sendResponse({ success: false, message: 'No input field is focused' });
+        return;
+      }
+
+      const foundWord = this.getWordAtCaret(element);
+      if (!foundWord) {
+        sendResponse({ success: false, message: 'No word found at cursor' });
+        return;
+      }
+
+      // Apply the word correction
+      this.currentElement = element;
+      this.currentWordData = foundWord;
+      this.replaceWord();
+
+      this.showNotification(`✅ Fixed: "${foundWord.original}" → "${foundWord.converted}"`, 'success');
+      sendResponse({ success: true, original: foundWord.original, converted: foundWord.converted });
+    } catch (e) {
+      console.warn('⚠️ Fix current word failed:', e.message);
+      sendResponse({ success: false, message: 'An error occurred while fixing the word' });
     }
-
-    const foundWord = this.getWordAtCaret(element);
-    if (!foundWord) {
-      sendResponse({ success: false, message: 'No word found at cursor' });
-      return;
-    }
-
-    // Apply the word correction
-    this.currentElement = element;
-    this.currentWordData = foundWord;
-    this.replaceWord();
-
-    this.showNotification(`✅ Fixed: "${foundWord.original}" → "${foundWord.converted}"`, 'success');
-    sendResponse({ success: true, original: foundWord.original, converted: foundWord.converted });
   }
 
   // Force fix all words from popup (bypass dictionary)
@@ -130,22 +129,14 @@ class ModernLayoutDetector {
       return;
     }
 
-    if (this.isCorrectingNow) {
-      sendResponse({ success: false, message: 'Correction already in progress' });
-      return;
-    }
-
-    this.isCorrectingNow = true;
-
-    // Start the EPIC animation sequence
+    // startEpicProgressiveHighlighting manages isCorrectingNow internally
     await this.startEpicProgressiveHighlighting(element);
 
-    this.isCorrectingNow = false;
-
-    // Get the final count for response
     const wrongWords = this.findWrongWords(element);
     sendResponse({ success: true, count: wrongWords.length });
   }
+
+  // ─── UI COMPONENTS ─────────────────────────────────────────────────
 
   createUndoButton() {
     this.undoButton = document.createElement('div');
@@ -192,6 +183,8 @@ class ModernLayoutDetector {
     }, 3000);
   }
 
+  // ─── DICTIONARY & VALIDATION ───────────────────────────────────────
+
   shouldAutoCorrectSingleChar(char, isArabic) {
     if (isArabic) {
       return !this.arabicSingleWords.has(char);
@@ -236,8 +229,25 @@ class ModernLayoutDetector {
     }
   }
 
+  // L9/L10: Skip URLs and emails from correction
+  shouldSkipWord(word) {
+    // URLs: http://, https://, ftp://, www.
+    if (/^(https?:\/\/|ftp:\/\/|www\.)/i.test(word)) return true;
+
+    // Emails: user@domain.com
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(word)) return true;
+
+    // File paths: C:\folder, /usr/bin, ./file
+    if (/^([a-zA-Z]:\\|\/|\.\/|\.\.\/)/i.test(word)) return true;
+
+    return false;
+  }
+
   shouldAutoCorrect(word, converted) {
     if (word === converted) return false;
+
+    // L9/L10: Skip URLs, emails
+    if (this.shouldSkipWord(word)) return false;
 
     // Skip pure-digit words — numbers are not keyboard layout mistakes
     if (/^\d+$/.test(word)) return false;
@@ -260,6 +270,8 @@ class ModernLayoutDetector {
     return word.length >= 2;
   }
 
+  // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────────
+
   handleKeydown(event) {
     if (this.pauseExtension) return;
 
@@ -275,9 +287,7 @@ class ModernLayoutDetector {
 
     // Ctrl+Alt for Epic Auto-Fix All
     if (event.ctrlKey && event.altKey && !event.shiftKey && !event.metaKey) {
-      console.log('🎹 DEBUG: Ctrl+Alt detected, triggering epic highlighting');
       const element = document.activeElement;
-      console.log('🎹 DEBUG: Active element:', element, 'isInputElement:', this.isInputElement(element));
       if (this.isInputElement(element)) {
         event.preventDefault();
         this.startEpicProgressiveHighlighting(element);
@@ -310,68 +320,68 @@ class ModernLayoutDetector {
     }
   }
 
-  // 🎬 EPIC PROGRESSIVE HIGHLIGHTING WITH ANIME.JS 🎬
+  // ─── SCANNING & CORRECTION FLOWS ──────────────────────────────────
+
+  // Smart auto-fix: scan → highlight → correct all wrong words
   async startEpicProgressiveHighlighting(element) {
     if (this.isCorrectingNow) {
       this.showNotification('⏳ Please wait, correction in progress...', 'warning');
       return;
     }
 
-    if (this.correctionCooldown.has(element)) {
-      this.showNotification('⏳ This field was recently corrected. Please wait a moment.', 'warning');
-      return;
-    }
-
     this.isCorrectingNow = true;
 
-    // Phase 1: Epic Scanning Animation
-    this.showNotification('🔍 Initiating epic scan sequence...', 'info');
+    try {
+      // Phase 1: Epic Scanning Animation
+      this.showNotification('🔍 Initiating epic scan sequence...', 'info');
 
-    const progressBar = this.createEpicScanProgressBar();
-    const scanLine = this.createEpicScanLine(element);
+      const progressBar = this.createEpicScanProgressBar();
+      const scanLine = this.createEpicScanLine(element);
 
-    // Epic progress bar animation with pure CSS - 70% FASTER!
-    progressBar.style.transition = 'width 0.6s ease-in-out';
-    progressBar.style.width = '100%';
+      progressBar.style.transition = 'width 0.6s ease-in-out';
+      progressBar.style.width = '100%';
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      const paddingLeft = parseInt(style.paddingLeft) || 0;
+      const paddingRight = parseInt(style.paddingRight) || 0;
+      const textAreaWidth = rect.width - paddingLeft - paddingRight;
 
-    // Epic scan line animation - 70% FASTER!
-    const rect = element.getBoundingClientRect();
-    const style = window.getComputedStyle(element);
-    const paddingLeft = parseInt(style.paddingLeft) || 0;
-    const paddingRight = parseInt(style.paddingRight) || 0;
-    const textAreaWidth = rect.width - paddingLeft - paddingRight;
+      scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
+      scanLine.style.opacity = '1';
+      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
 
-    scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
-    scanLine.style.opacity = '1';
-    scanLine.style.transform = `translateX(${textAreaWidth}px)`;
+      await this.delay(660);
 
-    // Wait for scan animation to complete - 70% FASTER!
-    await this.delay(660);
+      // Remove scanning elements
+      document.body.removeChild(progressBar);
+      document.body.removeChild(scanLine);
 
-    // Remove scanning elements
-    document.body.removeChild(progressBar);
-    document.body.removeChild(scanLine);
+      // Phase 2: Find Wrong Words
+      const wrongWords = this.findWrongWords(element);
 
-    // Phase 2: Find Wrong Words
-    const wrongWords = this.findWrongWords(element);
+      if (wrongWords.length === 0) {
+        this.showNotification('✅ No wrong words found! Text looks perfect.', 'success');
+        this.isCorrectingNow = false;
+        return;
+      }
 
-    if (wrongWords.length === 0) {
-      this.showNotification('✅ No wrong words found! Text looks perfect.', 'success');
+      // Phase 3: Epic Progressive Highlighting
+      this.showNotification(`🎯 Found ${wrongWords.length} wrong word${wrongWords.length > 1 ? 's' : ''}. Deploying epic highlights...`, 'info');
+      await this.epicHighlightWrongWords(element, wrongWords);
+
+      // Phase 4: Show Preview
+      await this.delay(450);
+      this.showNotification(`⚡ Ready to unleash corrections on ${wrongWords.length} word${wrongWords.length > 1 ? 's' : ''}...`, 'info');
+
+      // Phase 5: Apply Corrections
+      await this.delay(240);
+      await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
+    } catch (e) {
+      console.warn('⚠️ Auto-fix failed:', e.message);
+      this.showNotification('❌ Something went wrong. Please try again.', 'warning');
+    } finally {
       this.isCorrectingNow = false;
-      return;
     }
-
-    // Phase 3: Epic Progressive Highlighting
-    this.showNotification(`🎯 Found ${wrongWords.length} wrong word${wrongWords.length > 1 ? 's' : ''}. Deploying epic highlights...`, 'info');
-    await this.epicHighlightWrongWords(element, wrongWords);
-
-    // Phase 4: Show Preview - 70% FASTER!
-    await this.delay(450);
-    this.showNotification(`⚡ Ready to unleash corrections on ${wrongWords.length} word${wrongWords.length > 1 ? 's' : ''}...`, 'info');
-
-    // Phase 5: Epic Corrections with Animation - 70% FASTER!
-    await this.delay(240);
-    await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
   }
 
   createEpicScanProgressBar() {
@@ -404,11 +414,9 @@ class ModernLayoutDetector {
 
   findWrongWords(element) {
     const text = element.value || element.textContent || '';
-    console.log('🔍 DEBUG: findWrongWords called with text:', { text, elementType: element.tagName });
     if (!text) return [];
 
     const words = text.split(/(\s+)/);
-    console.log('🔍 DEBUG: Split words:', words);
     const wrongWords = [];
     let position = 0;
 
@@ -418,11 +426,9 @@ class ModernLayoutDetector {
 
       if (trimmedWord.length >= 1) {
         const converted = this.convertText(trimmedWord);
-        console.log('🔍 DEBUG: Converting word:', { trimmedWord, converted });
 
         if (converted !== trimmedWord && this.shouldAutoCorrect(trimmedWord, converted)) {
           const isArabic = this.hasArabic(trimmedWord);
-          console.log('🔍 DEBUG: Found wrong word:', { trimmedWord, converted, isArabic });
 
           wrongWords.push({
             original: trimmedWord,
@@ -438,7 +444,6 @@ class ModernLayoutDetector {
       position += word.length;
     }
 
-    console.log('🔍 DEBUG: Final wrong words:', wrongWords);
     return wrongWords;
   }
 
@@ -458,6 +463,27 @@ class ModernLayoutDetector {
       if (trimmedWord.length >= 1) {
         // Skip pure-digit words — numbers are never layout mistakes
         if (/^\d+$/.test(trimmedWord)) {
+          position += word.length;
+          continue;
+        }
+
+        // Skip URLs, emails, file paths
+        if (this.shouldSkipWord(trimmedWord)) {
+          position += word.length;
+          continue;
+        }
+
+        // Skip single chars protected by whitelist (i, a, I, A, و)
+        if (trimmedWord.length === 1) {
+          const isArabic = this.hasArabic(trimmedWord);
+          if (!this.shouldAutoCorrectSingleChar(trimmedWord, isArabic)) {
+            position += word.length;
+            continue;
+          }
+        }
+
+        // Skip words that are already correct in their language
+        if (this.isRealWord(trimmedWord)) {
           position += word.length;
           continue;
         }
@@ -495,54 +521,56 @@ class ModernLayoutDetector {
       return;
     }
 
-    if (this.correctionCooldown.has(element)) {
-      this.showNotification('⏳ This field was recently corrected. Please wait a moment.', 'warning');
-      return;
-    }
-
     this.isCorrectingNow = true;
 
-    // Phase 1: Scanning animation
-    this.showNotification('🔍 Force scanning all words...', 'info');
-    const progressBar = this.createEpicScanProgressBar();
-    const scanLine = this.createEpicScanLine(element);
+    try {
+      // Phase 1: Scanning animation
+      this.showNotification('🔍 Force scanning all words...', 'info');
+      const progressBar = this.createEpicScanProgressBar();
+      const scanLine = this.createEpicScanLine(element);
 
-    progressBar.style.transition = 'width 0.6s ease-in-out';
-    progressBar.style.width = '100%';
+      progressBar.style.transition = 'width 0.6s ease-in-out';
+      progressBar.style.width = '100%';
 
-    const rect = element.getBoundingClientRect();
-    const style = window.getComputedStyle(element);
-    const paddingLeft = parseInt(style.paddingLeft) || 0;
-    const paddingRight = parseInt(style.paddingRight) || 0;
-    const textAreaWidth = rect.width - paddingLeft - paddingRight;
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      const paddingLeft = parseInt(style.paddingLeft) || 0;
+      const paddingRight = parseInt(style.paddingRight) || 0;
+      const textAreaWidth = rect.width - paddingLeft - paddingRight;
 
-    scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
-    scanLine.style.opacity = '1';
-    scanLine.style.transform = `translateX(${textAreaWidth}px)`;
+      scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
+      scanLine.style.opacity = '1';
+      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
 
-    await this.delay(660);
+      await this.delay(660);
 
-    document.body.removeChild(progressBar);
-    document.body.removeChild(scanLine);
+      document.body.removeChild(progressBar);
+      document.body.removeChild(scanLine);
 
-    // Phase 2: Find ALL convertible words (no dictionary filter)
-    const convertibleWords = this.findAllConvertibleWords(element);
+      // Phase 2: Find ALL convertible words (no dictionary filter)
+      const convertibleWords = this.findAllConvertibleWords(element);
 
-    if (convertibleWords.length === 0) {
-      this.showNotification('✅ No convertible words found.', 'success');
+      if (convertibleWords.length === 0) {
+        this.showNotification('✅ No convertible words found.', 'success');
+        this.isCorrectingNow = false;
+        return;
+      }
+
+      // Phase 3: Highlighting
+      this.showNotification(`💪 Force-fixing ${convertibleWords.length} word${convertibleWords.length > 1 ? 's' : ''} (bypassing dictionary)...`, 'info');
+      await this.epicHighlightWrongWords(element, convertibleWords);
+
+      await this.delay(450);
+
+      // Phase 4: Apply corrections with animation
+      await this.delay(240);
+      await this.applyEpicCorrectionsWithAnimation(element, convertibleWords);
+    } catch (e) {
+      console.warn('⚠️ Force fix failed:', e.message);
+      this.showNotification('❌ Something went wrong. Please try again.', 'warning');
+    } finally {
       this.isCorrectingNow = false;
-      return;
     }
-
-    // Phase 3: Highlighting
-    this.showNotification(`💪 Force-fixing ${convertibleWords.length} word${convertibleWords.length > 1 ? 's' : ''} (bypassing dictionary)...`, 'info');
-    await this.epicHighlightWrongWords(element, convertibleWords);
-
-    await this.delay(450);
-
-    // Phase 4: Apply corrections with animation
-    await this.delay(240);
-    await this.applyEpicCorrectionsWithAnimation(element, convertibleWords);
   }
 
   // EPIC highlighting with perfect positioning
@@ -612,13 +640,9 @@ class ModernLayoutDetector {
       this.animateUnifiedHighlight(unifiedBox, unifiedLabel);
     }
 
-    // Wait for animations to complete - 70% FASTER!
     await this.delay(240);
 
-    // All animations are now handled by the unified system above
-    // No need for additional highlight animations since we're using unified boxes
-
-    // Wait for all animations to complete - 70% FASTER!
+    // Wait for highlight animations to settle
     await this.delay(wrongWords.length * 60 + 240);
   }
 
@@ -667,6 +691,8 @@ class ModernLayoutDetector {
     };
   }
 
+  // ─── TEXT REPLACEMENT & UNDO ───────────────────────────────────────
+
   async applyEpicCorrectionsWithAnimation(element, wrongWords) {
     // Apply corrections to text
     const originalText = element.value || element.textContent || '';
@@ -685,13 +711,11 @@ class ModernLayoutDetector {
       const wordData = wrongWords[i];
 
       if (wordData.highlightElement) {
-        // Pure CSS correction pulse animation - 70% FASTER!
         wordData.highlightElement.style.transition = 'all 0.12s ease';
         wordData.highlightElement.style.transform = 'scale(1.3)';
 
         await this.delay(60);
 
-        // Success transformation - 70% FASTER!
         wordData.highlightElement.style.transition = 'all 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
         wordData.highlightElement.style.backgroundColor = '#2ed573';
         wordData.highlightElement.style.transform = 'scale(1)';
@@ -701,8 +725,6 @@ class ModernLayoutDetector {
     }
 
     // Apply the actual text correction
-    console.log('🔧 Applying corrections...', { originalText, correctedText });
-
     if (element.value !== undefined) {
       element.value = correctedText;
       // Trigger input event to notify of changes
@@ -716,8 +738,6 @@ class ModernLayoutDetector {
     // Focus the element to ensure changes are visible
     element.focus();
 
-    console.log('✅ Text correction applied successfully!');
-
     // Save to history
     this.undoHistory.push({
       element: element,
@@ -730,7 +750,7 @@ class ModernLayoutDetector {
       timestamp: Date.now()
     });
 
-    // Epic cleanup animation with pure CSS - 70% FASTER!
+    // Cleanup: fade out highlights
     wrongWords.forEach((wordData, i) => {
       setTimeout(() => {
         if (wordData.highlightElement) {
@@ -774,12 +794,6 @@ class ModernLayoutDetector {
 
     // Reset state
     this.isCorrectingNow = false;
-
-    // Add to cooldown
-    this.correctionCooldown.add(element);
-    setTimeout(() => {
-      this.correctionCooldown.delete(element);
-    }, 3000);
   }
 
   showEpicUndoButton() {
@@ -811,13 +825,6 @@ class ModernLayoutDetector {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  getElementKey(element) {
-    if (!element._layoutDetectorId) {
-      element._layoutDetectorId = 'ld_' + Math.random().toString(36).substr(2, 9);
-    }
-    return element._layoutDetectorId;
-  }
-
   undoLastCorrection() {
     if (this.undoHistory.length === 0) return false;
 
@@ -832,9 +839,6 @@ class ModernLayoutDetector {
       } else if (element.textContent !== undefined) {
         element.textContent = lastAction.originalText;
       }
-
-      const elementKey = this.getElementKey(element);
-      this.lastCorrectedText.set(elementKey, lastAction.originalText);
 
       element.focus();
       this.showNotification('↶ Correction undone with epic style!', 'info');
@@ -853,7 +857,9 @@ class ModernLayoutDetector {
     return false;
   }
 
-  // � Create ONE UNIFIED highlight box covering ALL wrong words
+  // ─── HIGHLIGHT BOX CREATION ────────────────────────────────────────
+
+  // Create ONE UNIFIED highlight box covering ALL wrong words
   createUnifiedHighlightBox(wrongWords, element) {
     const positions = wrongWords.map(word =>
       this.getPreciseWordPosition(element, word.start, word.end)
@@ -936,7 +942,6 @@ class ModernLayoutDetector {
 
   // 🎆 Animate single word highlight
   animateSingleHighlight(highlight, preview) {
-    // Pure CSS animation without Anime.js
     highlight.style.transition = 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
     highlight.style.opacity = '1';
     highlight.style.transform = 'scale(1)';
@@ -951,7 +956,6 @@ class ModernLayoutDetector {
 
   // 🎆 Animate unified highlight with EPIC effects
   animateUnifiedHighlight(unifiedBox, unifiedLabel) {
-    // Pure CSS animation without Anime.js - 70% FASTER!
     unifiedBox.style.transition = 'all 0.24s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
     unifiedBox.style.opacity = '1';
     unifiedBox.style.transform = 'scale(1)';
@@ -963,6 +967,8 @@ class ModernLayoutDetector {
       unifiedLabel.style.transform = unifiedLabel.style.transform.replace('scale(0.5)', 'scale(1)');
     }, 120);
   }
+
+  // ─── UTILITIES ─────────────────────────────────────────────────────
 
   isInputElement(element) {
     const tag = element.tagName.toLowerCase();
@@ -1050,23 +1056,6 @@ class ModernLayoutDetector {
     return null;
   }
 
-  getWordPositionInElement(element, wordStart, wordEnd) {
-    const rect = element.getBoundingClientRect();
-    const style = window.getComputedStyle(element);
-    const fontSize = parseInt(style.fontSize) || 14;
-    const charWidth = fontSize * 0.6;
-
-    const wordX = rect.left + (wordStart * charWidth);
-    const wordY = rect.top;
-
-    return {
-      x: wordX,
-      y: wordY,
-      width: (wordEnd - wordStart) * charWidth,
-      height: rect.height
-    };
-  }
-
   replaceWord() {
     if (!this.currentElement || !this.currentWordData) return;
 
@@ -1082,8 +1071,6 @@ class ModernLayoutDetector {
       corrections: [{ original: wordData.original, converted: wordData.converted }],
       timestamp: Date.now()
     });
-
-    this.replacedWords.add(wordData.key);
 
     if (element.value !== undefined) {
       const text = element.value;
@@ -1111,11 +1098,6 @@ class ModernLayoutDetector {
       element.focus();
     }
 
-    setTimeout(() => {
-      if (this.replacedWords.size > 10) {
-        this.replacedWords.clear();
-      }
-    }, 5000);
   }
 }
 
