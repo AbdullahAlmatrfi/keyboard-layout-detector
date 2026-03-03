@@ -117,12 +117,18 @@ Every correction can be undone:
 5. The extension will be active on all websites
 
 ## Files Structure
-npacked" and select the extension folder
-5. The extension will be active on all websites
 
-## Files Structure
->>>>>>> ff6ae7410048e47de3b7fea5c6b94c97e403ce57
-Load unpacked" and select the extension folder
-5. The extension will be active on all websites
-
-## Files Structure
+```
+keyboard-layout-detector/
+├── manifest.json       # Chrome extension manifest (permissions, entry points)
+├── content.js          # Main content script — detection, correction, animations
+├── fa-layout.js        # Farsi/Arabic keyboard layout mapping tables (En↔Ar)
+├── popup.html          # Extension popup UI markup
+├── popup.js            # Popup logic (button handlers, status updates)
+├── popup.css           # Popup styles
+├── styles.css          # Content-page styles (highlights, notifications)
+├── dict-en.json        # English word dictionary for validation
+├── dict-ar.json        # Arabic word dictionary for validation
+├── CHANGELOG.md        # Enhancement roadmap and feature tracking
+└── README.md           # This file
+```
