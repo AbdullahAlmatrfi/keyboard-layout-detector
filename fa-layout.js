@@ -29,7 +29,9 @@ for (const [en, ar] of Object.entries(faLayoutMap)) {
 // Explicit mappings for correct character conversion
 enLayoutMap["ي"] = "d";   // ي maps back to d
 enLayoutMap["ب"] = "f";   // ب maps back to f
-enLayoutMap["لا"] = "b";  // لا maps back to b
+// Note: "لا" (lam+alef) is intentionally NOT mapped to 'b' here.
+// split('') decomposes لا into ل→g and ا→h, which correctly reverses
+// the g+h key presses that produce lam+alef when typing words like "night".
 
 // Arabic layout converter object
 const faLayout = {
@@ -46,17 +48,20 @@ const faLayout = {
         }).join('');
     },
 
-    // Convert Arabic text to English (like typing Arabic on English keyboard)
+    // Convert Arabic text to English — char-by-char (treats لا as ل→g + ا→h).
     toEn: function (text) {
-        // First, handle compound characters like لا
-        let processedText = text.replace(/لا/g, 'b');
+        return text.split('').map(char => {
+            if (enLayoutMap[char]) return enLayoutMap[char];
+            return char;
+        }).join('');
+    },
 
-        // Then process remaining characters individually
-        return processedText.split('').map(char => {
-            if (enLayoutMap[char]) {
-                return enLayoutMap[char];
-            }
-            return char; // Return unchanged if no mapping found
+    // Convert Arabic text to English — pre-replace لا as the 'b' key.
+    toEnB: function (text) {
+        const processed = text.replace(/لا/g, 'b');
+        return processed.split('').map(char => {
+            if (enLayoutMap[char]) return enLayoutMap[char];
+            return char;
         }).join('');
     },
 

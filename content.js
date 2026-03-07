@@ -6,6 +6,8 @@ class ModernLayoutDetector {
     this.undoHistory = [];
     this.isCorrectingNow = false;
     this.pauseExtension = false;
+    this.toastEl = null;        // single persistent toast element
+    this._toastHideTimer = null;
 
     // Dictionary sets for word validation (L14)
     this.dictEn = null; // Set of common English words
@@ -94,7 +96,7 @@ class ModernLayoutDetector {
         return;
       }
 
-      // Apply the word correction
+      // Apply the word correction (Ctrl+Q is a manual override — always convert)
       this.currentElement = element;
       this.currentWordData = foundWord;
       this.replaceWord();
@@ -155,32 +157,77 @@ class ModernLayoutDetector {
   }
 
   showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `auto-correct-notification ${type}`;
-    notification.textContent = message;
+    // Create the single toast element once
+    if (!this.toastEl) {
+      this.toastEl = document.createElement('div');
+      this.toastEl.className = 'auto-correct-notification';
+      this.toastEl.style.opacity = '0';
+      document.body.appendChild(this.toastEl);
+    }
 
-    document.body.appendChild(notification);
+    // Cancel any pending hide timer so previous message doesn't cut this one short
+    if (this._toastHideTimer) {
+      clearTimeout(this._toastHideTimer);
+      this._toastHideTimer = null;
+    }
 
-    // Pure CSS notification animation
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateY(-20px)';
-    notification.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    // Update content and type
+    this.toastEl.textContent = message;
+    this.toastEl.className = `auto-correct-notification ${type}`;
 
-    setTimeout(() => {
-      notification.style.opacity = '1';
-      notification.style.transform = 'translateY(0)';
-    }, 100);
+    // Position toast relative to the focused input:
+    //   - enough space above  → appear above the input
+    //   - input near top edge → appear below the input
+    //   - no input detected   → viewport bottom-center fallback
+    const el = document.activeElement;
+    let inputRect = null;
+    if (el && this.isInputElement(el)) {
+      try { inputRect = el.getBoundingClientRect(); } catch (e) { /* cross-origin iframe */ }
+    }
 
-    // Auto-hide with smooth animation
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      notification.style.transform = 'translateY(-20px)';
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }, 3000);
+    // Always reset both top and bottom first to prevent simultaneous top+bottom stretch
+    this.toastEl.style.top = '';
+    this.toastEl.style.bottom = '';
+    this.toastEl.style.height = 'auto';
+
+    if (inputRect) {
+      const centerX = Math.round(inputRect.left + inputRect.width / 2);
+      this.toastEl.style.left = centerX + 'px';
+
+      if (inputRect.top > 54) {
+        // Enough space above — show above the input
+        this.toastEl.style.top = Math.round(inputRect.top - 50) + 'px';
+      } else {
+        // Input is near the top (search bars) — show below it
+        this.toastEl.style.top = Math.round(inputRect.bottom + 8) + 'px';
+      }
+    } else {
+      // Fallback: viewport bottom-center
+      this.toastEl.style.left = Math.round(window.innerWidth / 2) + 'px';
+      this.toastEl.style.bottom = '24px';
+    }
+
+    // Animate in: start shifted down 8px, fade to final position
+    this.toastEl.style.transition = 'none';
+    this.toastEl.style.opacity = '0';
+    this.toastEl.style.transform = 'translateX(-50%) translateY(8px)';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.toastEl.style.transition = 'opacity 0.25s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        this.toastEl.style.opacity = '1';
+        this.toastEl.style.transform = 'translateX(-50%) translateY(0)';
+      });
+    });
+
+    // Auto-hide after 2.5s
+    this._toastHideTimer = setTimeout(() => {
+      if (this.toastEl) {
+        this.toastEl.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        this.toastEl.style.opacity = '0';
+        this.toastEl.style.transform = 'translateX(-50%) translateY(8px)';
+      }
+    }, 2500);
   }
 
   // ─── DICTIONARY & VALIDATION ───────────────────────────────────────
@@ -276,7 +323,8 @@ class ModernLayoutDetector {
     if (this.pauseExtension) return;
 
     // Ctrl+Z for undo — only intercept if focused on the corrected element
-    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+    // event.code used (not event.key) so shortcuts fire regardless of OS keyboard language (Arabic/English)
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ' && !event.shiftKey) {
       const lastEntry = this.undoHistory[this.undoHistory.length - 1];
       if (lastEntry && document.activeElement === lastEntry.element) {
         event.preventDefault();
@@ -296,7 +344,7 @@ class ModernLayoutDetector {
     }
 
     // Ctrl+Shift+Q for Force Fix All Words (bypass dictionary)
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'q' || event.key === 'Q')) {
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === 'KeyQ') {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
         event.preventDefault();
@@ -306,7 +354,7 @@ class ModernLayoutDetector {
     }
 
     // Ctrl+Q for Fix Current Word
-    if ((event.ctrlKey || event.metaKey) && event.key === 'q') {
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.code === 'KeyQ') {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
         event.preventDefault();
@@ -332,9 +380,7 @@ class ModernLayoutDetector {
     this.isCorrectingNow = true;
 
     try {
-      // Phase 1: Epic Scanning Animation
-      this.showNotification('🔍 Initiating epic scan sequence...', 'info');
-
+      // Phase 1: Scanning Animation
       const progressBar = this.createEpicScanProgressBar();
       const scanLine = this.createEpicScanLine(element);
 
@@ -365,15 +411,9 @@ class ModernLayoutDetector {
         return;
       }
 
-      // Phase 3: Epic Progressive Highlighting
-      this.showNotification(`🎯 Found ${wrongWords.length} wrong word${wrongWords.length > 1 ? 's' : ''}. Deploying epic highlights...`, 'info');
+      // Phase 3: Highlight + Correct
       await this.epicHighlightWrongWords(element, wrongWords);
-
-      // Phase 4: Show Preview
       await this.delay(450);
-      this.showNotification(`⚡ Ready to unleash corrections on ${wrongWords.length} word${wrongWords.length > 1 ? 's' : ''}...`, 'info');
-
-      // Phase 5: Apply Corrections
       await this.delay(240);
       await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
     } catch (e) {
@@ -525,7 +565,6 @@ class ModernLayoutDetector {
 
     try {
       // Phase 1: Scanning animation
-      this.showNotification('🔍 Force scanning all words...', 'info');
       const progressBar = this.createEpicScanProgressBar();
       const scanLine = this.createEpicScanLine(element);
 
@@ -556,13 +595,9 @@ class ModernLayoutDetector {
         return;
       }
 
-      // Phase 3: Highlighting
-      this.showNotification(`💪 Force-fixing ${convertibleWords.length} word${convertibleWords.length > 1 ? 's' : ''} (bypassing dictionary)...`, 'info');
+      // Phase 3: Highlight + Correct
       await this.epicHighlightWrongWords(element, convertibleWords);
-
       await this.delay(450);
-
-      // Phase 4: Apply corrections with animation
       await this.delay(240);
       await this.applyEpicCorrectionsWithAnimation(element, convertibleWords);
     } catch (e) {
@@ -578,11 +613,10 @@ class ModernLayoutDetector {
     if (wrongWords.length === 0) return;
 
     if (wrongWords.length === 1) {
-      // 🎯 SINGLE WORD: Keep original individual process
+      // Single word: highlight the word, show converted text in toast
       const wordData = wrongWords[0];
       const wordPosition = this.getPreciseWordPosition(element, wordData.start, wordData.end);
 
-      // Create individual highlight
       const highlight = document.createElement('div');
       highlight.className = `wrong-word-highlight ${wordData.isArabic ? 'arabic' : 'english'}`;
       highlight.style.left = wordPosition.x + 'px';
@@ -595,49 +629,25 @@ class ModernLayoutDetector {
 
       document.body.appendChild(highlight);
 
-      // Create individual preview
-      const preview = document.createElement('div');
-      preview.className = 'word-preview';
-      preview.textContent = wordData.converted;
-      preview.style.opacity = '0';
-      preview.style.transform = 'scale(0.5)';
-
-      // Position preview above word
-      const text = element.value || element.textContent || '';
-      const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
-
-      if (isRTL) {
-        preview.style.left = (wordPosition.x + wordPosition.width) + 'px';
-        preview.style.top = (wordPosition.y - 35) + 'px';
-        preview.style.transform += ' translateX(-100%)';
-      } else {
-        preview.style.left = (wordPosition.x + wordPosition.width / 2) + 'px';
-        preview.style.top = (wordPosition.y - 35) + 'px';
-        preview.style.transform += ' translateX(-50%)';
-      }
-
-      document.body.appendChild(preview);
-
       wordData.highlightElement = highlight;
-      wordData.previewElement = preview;
+      wordData.previewElement = null; // preview is shown via toast
 
-      this.animateSingleHighlight(highlight, preview);
+      this.showNotification(`→ ${wordData.converted}`, 'info');
+      this.animateSingleHighlight(highlight);
 
     } else {
-      // 🎆 MULTIPLE WORDS: ONE UNIFIED BOX FOR ALL WORDS!
+      // Multiple words: one unified highlight box + toast listing all conversions
       const unifiedBox = this.createUnifiedHighlightBox(wrongWords, element);
-      const unifiedLabel = this.createUnifiedPreviewLabel(wrongWords, element);
-
       document.body.appendChild(unifiedBox);
-      document.body.appendChild(unifiedLabel);
 
-      // Store references for all words
       wrongWords.forEach(wordData => {
         wordData.highlightElement = unifiedBox;
-        wordData.previewElement = unifiedLabel;
+        wordData.previewElement = null; // preview is shown via toast
       });
 
-      this.animateUnifiedHighlight(unifiedBox, unifiedLabel);
+      const previews = wrongWords.map(w => w.converted).join(' · ');
+      this.showNotification(`→ ${previews}`, 'info');
+      this.animateUnifiedHighlight(unifiedBox);
     }
 
     await this.delay(240);
@@ -661,8 +671,8 @@ class ModernLayoutDetector {
     const textBefore = text.substring(0, start);
     const word = text.substring(start, end);
 
-    // Check if text direction is RTL
-    const isRTL = style.direction === 'rtl' || this.hasArabic(text);
+    // Check if text direction is RTL using only the element's CSS direction
+    const isRTL = style.direction === 'rtl';
 
     // Measure text width using canvas
     const canvas = document.createElement('canvas');
@@ -725,15 +735,7 @@ class ModernLayoutDetector {
     }
 
     // Apply the actual text correction
-    if (element.value !== undefined) {
-      element.value = correctedText;
-      // Trigger input event to notify of changes
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-    } else if (element.textContent !== undefined) {
-      element.textContent = correctedText;
-    } else if (element.innerHTML !== undefined) {
-      element.innerHTML = correctedText;
-    }
+    this.writeToElement(element, correctedText);
 
     // Focus the element to ensure changes are visible
     element.focus();
@@ -834,11 +836,7 @@ class ModernLayoutDetector {
     if (element && document.contains(element)) {
       this.isCorrectingNow = true;
 
-      if (element.value !== undefined) {
-        element.value = lastAction.originalText;
-      } else if (element.textContent !== undefined) {
-        element.textContent = lastAction.originalText;
-      }
+      this.writeToElement(element, lastAction.originalText);
 
       element.focus();
       this.showNotification('↶ Correction undone with epic style!', 'info');
@@ -889,83 +887,22 @@ class ModernLayoutDetector {
     return unifiedBox;
   }
 
-  // 🎆 Create ONE UNIFIED preview label showing ALL corrections
-  createUnifiedPreviewLabel(wrongWords, element) {
-    const positions = wrongWords.map(word =>
-      this.getPreciseWordPosition(element, word.start, word.end)
-    );
+  // ─── ANIMATION HELPERS ────────────────────────────────────────────
 
-    // Calculate center position for the unified label
-    const minX = Math.min(...positions.map(p => p.x));
-    const maxX = Math.max(...positions.map(p => p.x + p.width));
-    const minY = Math.min(...positions.map(p => p.y));
-
-    const centerX = (minX + maxX) / 2;
-
-    // Create unified text showing ALL corrections
-    const corrections = wrongWords.map(word => word.converted);
-    const unifiedText = `Corrected words: ${corrections.join(', ')}`;
-
-    const unifiedLabel = document.createElement('div');
-    unifiedLabel.className = 'word-preview unified-preview';
-    unifiedLabel.innerHTML = unifiedText;
-    unifiedLabel.style.opacity = '0';
-    unifiedLabel.style.transform = 'scale(0.5)';
-    unifiedLabel.style.fontSize = '13px';
-    unifiedLabel.style.maxWidth = '600px';
-    unifiedLabel.style.padding = '12px 20px';
-    unifiedLabel.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-    unifiedLabel.style.border = '3px solid rgba(255,255,255,0.4)';
-    unifiedLabel.style.boxShadow = '0 12px 50px rgba(0,0,0,0.5)';
-    unifiedLabel.style.borderRadius = '12px';
-    unifiedLabel.style.fontWeight = '700';
-    unifiedLabel.style.backdropFilter = 'blur(10px)';
-    unifiedLabel.style.webkitBackdropFilter = 'blur(10px)';
-
-    // Position above the text area, not above the words
-    const elementRect = element.getBoundingClientRect();
-    const text = element.value || element.textContent || '';
-    const isRTL = window.getComputedStyle(element).direction === 'rtl' || this.hasArabic(text);
-
-    if (isRTL) {
-      unifiedLabel.style.left = (elementRect.right - 20) + 'px';
-      unifiedLabel.style.top = (elementRect.top - 60) + 'px';
-      unifiedLabel.style.transform += ' translateX(-100%)';
-    } else {
-      unifiedLabel.style.left = (elementRect.left + elementRect.width / 2) + 'px';
-      unifiedLabel.style.top = (elementRect.top - 60) + 'px';
-      unifiedLabel.style.transform += ' translateX(-50%)';
-    }
-
-    return unifiedLabel;
-  }
-
-  // 🎆 Animate single word highlight
-  animateSingleHighlight(highlight, preview) {
+  // Animate single word highlight
+  animateSingleHighlight(highlight) {
     highlight.style.transition = 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
     highlight.style.opacity = '1';
     highlight.style.transform = 'scale(1)';
     highlight.classList.add('detected');
-
-    setTimeout(() => {
-      preview.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-      preview.style.opacity = '1';
-      preview.style.transform = preview.style.transform.replace('scale(0.5)', 'scale(1)');
-    }, 300);
   }
 
   // 🎆 Animate unified highlight with EPIC effects
-  animateUnifiedHighlight(unifiedBox, unifiedLabel) {
+  animateUnifiedHighlight(unifiedBox) {
     unifiedBox.style.transition = 'all 0.24s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
     unifiedBox.style.opacity = '1';
     unifiedBox.style.transform = 'scale(1)';
     unifiedBox.classList.add('detected');
-
-    setTimeout(() => {
-      unifiedLabel.style.transition = 'all 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-      unifiedLabel.style.opacity = '1';
-      unifiedLabel.style.transform = unifiedLabel.style.transform.replace('scale(0.5)', 'scale(1)');
-    }, 120);
   }
 
   // ─── UTILITIES ─────────────────────────────────────────────────────
@@ -988,12 +925,38 @@ class ModernLayoutDetector {
     }
 
     if (this.hasArabic(text)) {
-      return window.faLayout.toEn(text);
+      const asB  = window.faLayout.toEnB(text);
+      const asGH = window.faLayout.toEn(text);
+
+      if (asB  !== text && this.isRealWord(asB))  return asB;
+      if (asGH !== text && this.isRealWord(asGH)) return asGH;
+      return asB !== text ? asB : asGH;
     } else if (window.faLayout.hasEnglish(text) || (includeNumbers && /\d/.test(text))) {
       return window.faLayout.fromEn(text, includeNumbers);
     }
 
     return text;
+  }
+
+  // Write text to any supported element type.
+  // For plain input/textarea: set .value directly.
+  // For contentEditable (CKEditor, Teams, Notion, etc.): use execCommand('insertText')
+  // so the host framework's event listeners fire and the change sticks.
+  writeToElement(element, text) {
+    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+      element.value = text;
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    } else if (element.contentEditable === 'true') {
+      element.focus();
+      // Select all existing content then replace via insertText.
+      // execCommand fires proper InputEvent that frameworks like CKEditor intercept.
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand('insertText', false, text);
+    }
   }
 
   getCaretPosition(element) {
@@ -1072,7 +1035,7 @@ class ModernLayoutDetector {
       timestamp: Date.now()
     });
 
-    if (element.value !== undefined) {
+    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
       const text = element.value;
       const newText = text.substring(0, wordData.start) +
         wordData.converted +
@@ -1085,17 +1048,12 @@ class ModernLayoutDetector {
       element.focus();
       element.setSelectionRange(wordData.start + wordData.converted.length,
         wordData.start + wordData.converted.length);
-    } else if (element.textContent !== undefined) {
+    } else if (element.contentEditable === 'true') {
       const text = element.textContent;
       const newText = text.substring(0, wordData.start) +
         wordData.converted +
         text.substring(wordData.end);
-      element.textContent = newText;
-
-      // Dispatch input event so browser updates cursor tracking
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-
-      element.focus();
+      this.writeToElement(element, newText);
     }
 
   }
