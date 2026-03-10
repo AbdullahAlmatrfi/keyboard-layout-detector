@@ -3,6 +3,11 @@
   "name": "Keyboard Layout Detector",
   "version": "4.0",
   "description": "Fix Arabic/English keyboard layout mistakes",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "content_security_policy": {
     "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none';"
   },
@@ -26,8 +31,16 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Keyboard Layout Detector"
+    "default_title": "Keyboard Layout Detector",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   },
+  "host_permissions": [
+    "https://docs.google.com/*"
+  ],
   "web_accessible_resources": [
     {
       "resources": [

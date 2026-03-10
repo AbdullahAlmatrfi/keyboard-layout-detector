@@ -22,27 +22,27 @@
       <span class="btn-icon">🎯</span>
       <div class="btn-content">
         <div class="btn-title">Fix Current Word</div>
-        <div class="btn-desc">Fix word at cursor (Ctrl+Q)</div>
+        <div class="btn-desc">Word at cursor — no dictionary check (Ctrl+Q)</div>
       </div>
     </button>
 
     <button id="autoFixAll" class="action-btn secondary">
       <span class="btn-icon">⚡</span>
       <div class="btn-content">
-        <div class="btn-title">Auto-Fix All Words</div>
-        <div class="btn-desc">Epic scan & fix all (Ctrl+Alt)</div>
+        <div class="btn-title">Smart Scan</div>
+        <div class="btn-desc">Dictionary-filtered — only real words (Ctrl+Alt)</div>
       </div>
     </button>
 
     <button id="forceFixAll" class="action-btn force">
       <span class="btn-icon">💪</span>
       <div class="btn-content">
-        <div class="btn-title">Force Fix All Words</div>
-        <div class="btn-desc">Convert entire sentence (Ctrl+Shift+Q)</div>
+        <div class="btn-title">Force Fix All</div>
+        <div class="btn-desc">No dictionary check — converts everything (Ctrl+Shift+Q)</div>
       </div>
     </button>
 
-    <button id="undoBtn" class="action-btn undo" style="display: none;">
+    <button id="undoBtn" class="action-btn undo">
       <span class="btn-icon">↶</span>
       <div class="btn-content">
         <div class="btn-title">Undo Last Change</div>
@@ -57,6 +57,12 @@
       <span class="slider"></span>
       Pause Extension
     </label>
+
+    <div class="divider"></div>
+
+    <div class="feedback-section">
+      <button id="feedbackBtn" class="feedback-submit-btn">💬 Send feedback</button>
+    </div>
 
     <div id="status" class="status"></div>
   </div>

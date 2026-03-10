@@ -1,3 +1,7 @@
+#undoBtn {
+  display: none;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -202,4 +206,28 @@ h2 {
   color: #6b7280;
   text-align: center;
   font-style: italic;
+}
+
+/* ─── FEEDBACK SECTION ─────────────────────────────────────── */
+.feedback-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.feedback-submit-btn {
+  width: 100%;
+  padding: 9px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.feedback-submit-btn:hover {
+  opacity: 0.88;
 }

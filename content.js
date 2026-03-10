@@ -8,6 +8,7 @@ class ModernLayoutDetector {
     this.pauseExtension = false;
     this.toastEl = null;        // single persistent toast element
     this._toastHideTimer = null;
+    this._toastClickHandler = null;
 
     // Dictionary sets for word validation (L14)
     this.dictEn = null; // Set of common English words
@@ -65,6 +66,15 @@ class ModernLayoutDetector {
             return true;
           } else if (request.action === 'checkUndo') {
             sendResponse({ hasUndo: this.undoHistory.length > 0 });
+            return true;
+          } else if (request.action === 'getWordAtCursor') {
+            const el = document.activeElement;
+            if (this.isInputElement(el)) {
+              const found = this.getWordAtCaret(el);
+              sendResponse({ word: found ? found.original : '' });
+            } else {
+              sendResponse({ word: '' });
+            }
             return true;
           }
         });
@@ -143,10 +153,14 @@ class ModernLayoutDetector {
   createUndoButton() {
     this.undoButton = document.createElement('div');
     this.undoButton.className = 'undo-button';
-    this.undoButton.innerHTML = `
-      <span class="undo-icon">↶</span>
-      <span class="undo-text">Undo</span>
-    `;
+    const undoIcon = document.createElement('span');
+    undoIcon.className = 'undo-icon';
+    undoIcon.textContent = '↶';
+    const undoText = document.createElement('span');
+    undoText.className = 'undo-text';
+    undoText.textContent = 'Undo';
+    this.undoButton.appendChild(undoIcon);
+    this.undoButton.appendChild(undoText);
     this.undoButton.style.display = 'none';
 
     this.undoButton.addEventListener('click', () => {
@@ -156,7 +170,7 @@ class ModernLayoutDetector {
     document.body.appendChild(this.undoButton);
   }
 
-  showNotification(message, type = 'info') {
+  showNotification(message, type = 'info', onClick = null) {
     // Create the single toast element once
     if (!this.toastEl) {
       this.toastEl = document.createElement('div');
@@ -171,9 +185,27 @@ class ModernLayoutDetector {
       this._toastHideTimer = null;
     }
 
+    // Remove any previous click handler
+    if (this._toastClickHandler) {
+      this.toastEl.removeEventListener('click', this._toastClickHandler);
+      this._toastClickHandler = null;
+      this.toastEl.style.cursor = '';
+      this.toastEl.style.pointerEvents = '';
+    }
+
     // Update content and type
     this.toastEl.textContent = message;
     this.toastEl.className = `auto-correct-notification ${type}`;
+
+    // Attach click handler if provided
+    if (onClick) {
+      this._toastClickHandler = onClick;
+      this.toastEl.addEventListener('click', this._toastClickHandler);
+      this.toastEl.style.cursor = 'pointer';
+      this.toastEl.style.pointerEvents = 'auto';
+    } else {
+      this.toastEl.style.pointerEvents = 'none';
+    }
 
     // Position toast relative to the focused input:
     //   - enough space above  → appear above the input
@@ -204,6 +236,7 @@ class ModernLayoutDetector {
     } else {
       // Fallback: viewport bottom-center
       this.toastEl.style.left = Math.round(window.innerWidth / 2) + 'px';
+      this.toastEl.style.top = 'auto';
       this.toastEl.style.bottom = '24px';
     }
 
@@ -228,6 +261,349 @@ class ModernLayoutDetector {
         this.toastEl.style.transform = 'translateX(-50%) translateY(8px)';
       }
     }, 2500);
+  }
+
+  // Show a clickable warning toast for words the scanner couldn't convert
+  showClickableReportToast(stuckWords, element, stuckHighlights = []) {
+    const label = stuckWords.length === 1
+      ? `⚠️ "${stuckWords[0]}" wasn't converted — tap to report`
+      : `⚠️ ${stuckWords.length} words weren't converted — tap to report`;
+
+    this.showNotification(label, 'warning', () => {
+      // Hide toast immediately on click
+      if (this.toastEl) this.toastEl.style.opacity = '0';
+      // Fade out orange highlights
+      stuckHighlights.forEach(h => {
+        h.style.transition = 'opacity 0.3s ease';
+        h.style.opacity = '0';
+        setTimeout(() => { if (h.parentNode) h.parentNode.removeChild(h); }, 320);
+      });
+      this.showReportPanel(stuckWords[0], element);
+    });
+
+    // Use breathing animation for this special toast
+    if (this.toastEl) {
+      this.toastEl.classList.add('toast-breathing');
+    }
+
+    // Override auto-hide to give more time to read & click
+    if (this._toastHideTimer) clearTimeout(this._toastHideTimer);
+    this._toastHideTimer = setTimeout(() => {
+      if (this.toastEl) {
+        this.toastEl.classList.remove('toast-breathing');
+        this.toastEl.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        this.toastEl.style.opacity = '0';
+        this.toastEl.style.transform = 'translateX(-50%) translateY(8px)';
+      }
+    }, 7000);
+  }
+
+  // Create orange highlight boxes for stuck words (not in dictionary)
+  createStuckWordHighlights(element, stuckWords) {
+    if (!stuckWords.length) return null;
+    const PAD = 4;
+    const text = element.value || element.textContent || '';
+    if (!text) return null;
+
+    // Collect positions for all stuck words
+    const positions = [];
+    const tokens = text.split(/(\s+)/);
+    let position = 0;
+    for (const token of tokens) {
+      const trimmed = token.trim();
+      if (stuckWords.includes(trimmed)) {
+        positions.push(this.getPreciseWordPosition(element, position, position + token.length));
+      }
+      position += token.length;
+    }
+    if (!positions.length) return null;
+
+    // Merge into one bounding box covering all stuck words
+    const minX = Math.min(...positions.map(p => p.x));
+    const minY = Math.min(...positions.map(p => p.y));
+    const maxX = Math.max(...positions.map(p => p.x + p.width));
+    const maxY = Math.max(...positions.map(p => p.y + p.height));
+
+    const h = document.createElement('div');
+    h.className = 'stuck-word-highlight';
+    h.style.left = (minX - PAD) + 'px';
+    h.style.top = (minY - PAD) + 'px';
+    h.style.width = (maxX - minX + PAD * 2) + 'px';
+    h.style.height = (maxY - minY + PAD * 2) + 'px';
+    document.body.appendChild(h);
+    requestAnimationFrame(() => {
+      h.style.transition = 'all 0.35s ease-out';
+      h.style.opacity = '1';
+      h.style.transform = 'scale(1)';
+    });
+    return h;
+  }
+
+  // Create clickable "not in dictionary" label floating above stuck word(s)
+  createNotInDictLabel(words, highlightEl, element, orangeBox = null) {
+    const label = document.createElement('div');
+    label.className = 'kld-not-in-dict-label';
+    const line1 = document.createElement('div');
+    line1.textContent = words.length === 1 ? '⚠ not in dictionary' : `⚠ ${words.length} words not in dictionary`;
+    const line2 = document.createElement('div');
+    line2.className = 'kld-not-in-dict-sub';
+    line2.textContent = 'click to add 👆';
+    label.appendChild(line1);
+    label.appendChild(line2);
+
+    const hLeft = parseFloat(highlightEl.style.left) || 0;
+    const hTop = parseFloat(highlightEl.style.top) || 0;
+    const hHeight = parseFloat(highlightEl.style.height) || 24;
+    const LABEL_HEIGHT = 44;
+    const MARGIN = 6;
+
+    // Flip below if not enough space above (same logic as the toast)
+    const spaceAbove = hTop;
+    const goBelow = spaceAbove < LABEL_HEIGHT + MARGIN + 54; // 54 = browser toolbar clearance
+
+    label.style.left = hLeft + 'px';
+    label.style.top = goBelow
+      ? (hTop + hHeight + MARGIN) + 'px'
+      : (hTop - LABEL_HEIGHT - MARGIN) + 'px';
+    label.style.opacity = '0';
+    label.style.transform = 'translateY(4px) scale(0.9)';
+    document.body.appendChild(label);
+
+    label.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearTimeout(fadeTimer);
+      if (label.parentNode) label.parentNode.removeChild(label);
+      // Fade orange box out on click too
+      if (orangeBox && orangeBox.parentNode) {
+        orangeBox.style.transition = 'opacity 0.25s ease';
+        orangeBox.style.opacity = '0';
+        setTimeout(() => { if (orangeBox.parentNode) orangeBox.parentNode.removeChild(orangeBox); }, 270);
+      }
+      this.showReportPanel(words, element);
+    });
+
+    // Animate in
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      label.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+      label.style.opacity = '1';
+      label.style.transform = 'translateY(0) scale(1)';
+    }));
+
+    // Auto-fade logic — paused while mouse is over the label (orange box stays in sync)
+    let fadeTimer = null;
+
+    const fadeOut = () => {
+      label.style.transition = 'opacity 0.3s ease';
+      label.style.opacity = '0';
+      setTimeout(() => { if (label.parentNode) label.parentNode.removeChild(label); }, 320);
+      // Fade orange box at the same time
+      if (orangeBox && orangeBox.parentNode) {
+        orangeBox.style.transition = 'opacity 0.3s ease';
+        orangeBox.style.opacity = '0';
+        setTimeout(() => { if (orangeBox.parentNode) orangeBox.parentNode.removeChild(orangeBox); }, 320);
+      }
+    };
+
+    const startFade = (delay) => {
+      clearTimeout(fadeTimer);
+      fadeTimer = setTimeout(fadeOut, delay);
+    };
+
+    label.addEventListener('mouseenter', () => {
+      clearTimeout(fadeTimer);
+      // Keep orange box visible while hovering label
+      if (orangeBox) {
+        orangeBox.style.transition = 'none';
+        orangeBox.style.opacity = '1';
+      }
+    });
+
+    label.addEventListener('mouseleave', () => {
+      startFade(1200); // fade both 1.2s after mouse leaves
+    });
+
+    // Initial 3s timer
+    startFade(3000);
+
+    return label;
+  }
+
+  // Find words that look like layout mistakes but couldn't be converted (missing from dictionary)
+  findStuckWords(element) {
+    const text = element.value || element.textContent || '';
+    if (!text || !this.dictsLoaded) return [];
+
+    const stuckWords = [];
+    for (const token of text.split(/\s+/)) {
+      const w = token.trim();
+      if (!w || w.length < 2) continue;
+      if (/^\d+$/.test(w)) continue;
+      if (this.shouldSkipWord(w)) continue;
+      if (this.isRealWord(w)) continue;          // already a valid word
+      const converted = this.convertText(w);
+      if (converted === w) continue;              // no conversion mapping at all
+      if (this.isRealWord(converted)) continue;  // was successfully converted
+      stuckWords.push(w);
+    }
+    return [...new Set(stuckWords)];
+  }
+
+  // Floating on-page report panel
+  showReportPanel(wrongWordRaw, anchorElement) {
+    const words = Array.isArray(wrongWordRaw) ? wrongWordRaw : [wrongWordRaw];
+    // Dismiss any active toast
+    if (this.toastEl) {
+      this.toastEl.classList.remove('toast-breathing');
+      this.toastEl.style.transition = 'opacity 0.15s ease';
+      this.toastEl.style.opacity = '0';
+      this.toastEl.style.pointerEvents = 'none';
+    }
+    if (this._toastHideTimer) { clearTimeout(this._toastHideTimer); this._toastHideTimer = null; }
+
+    const existing = document.getElementById('kld-report-panel');
+    if (existing) existing.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'kld-report-panel';
+    panel.className = 'kld-report-panel';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'kld-report-header';
+    const title = document.createElement('div');
+    title.className = 'kld-report-title';
+    title.textContent = '📝 Report missing word';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'kld-report-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => panel.remove());
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    // Wrong word — text field for one word, dropdown for multiple
+    const wrongLabel = document.createElement('div');
+    wrongLabel.className = 'kld-report-label';
+    wrongLabel.textContent = 'Wrong word typed:';
+
+    // Per-word correction map: word → typed correction (remembers each separately)
+    const corrections = Object.fromEntries(words.map(w => [w, '']));
+
+    let wrongWordEl;
+    if (words.length === 1) {
+      wrongWordEl = document.createElement('input');
+      wrongWordEl.className = 'kld-report-input';
+      wrongWordEl.type = 'text';
+      wrongWordEl.value = words[0];
+    } else {
+      wrongWordEl = document.createElement('select');
+      wrongWordEl.className = 'kld-report-input kld-report-select';
+      words.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = w;
+        wrongWordEl.appendChild(opt);
+      });
+    }
+
+    // Correct word input
+    const correctLabel = document.createElement('div');
+    correctLabel.className = 'kld-report-label';
+    correctLabel.textContent = words.length === 1 ? 'Should be:' : `Should be: (word 1 of ${words.length})`;
+    const correctInput = document.createElement('input');
+    correctInput.className = 'kld-report-input';
+    correctInput.type = 'text';
+    correctInput.placeholder = 'Type the correct word…';
+
+    // When dropdown changes: save current correction, load stored one for new selection
+    if (words.length > 1) {
+      let lastSelected = words[0];
+      wrongWordEl.addEventListener('change', () => {
+        // Save correction typed for the word we just left
+        corrections[lastSelected] = correctInput.value;
+        lastSelected = wrongWordEl.value;
+        // Load stored correction for newly selected word
+        correctInput.value = corrections[lastSelected] || '';
+        const idx = wrongWordEl.selectedIndex + 1;
+        correctLabel.textContent = `Should be: (word ${idx} of ${words.length})`;
+        correctInput.style.border = '';
+        correctInput.focus();
+      });
+    }
+
+    // Submit button — sends ALL filled corrections at once
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'kld-report-submit';
+    submitBtn.textContent = '📤 Submit';
+    submitBtn.addEventListener('click', async () => {
+      // Save whatever is currently typed before reading the map
+      corrections[wrongWordEl.value] = correctInput.value;
+
+      const pairs = words.map(w => ({ wrong: w, correct: corrections[w].trim() })).filter(p => p.correct);
+      if (!pairs.length) {
+        correctInput.style.border = '1.5px solid #ef4444';
+        correctInput.focus();
+        return;
+      }
+      submitBtn.textContent = '⏳ Sending…';
+      submitBtn.disabled = true;
+      for (const { wrong, correct } of pairs) {
+        await this.submitReport(wrong, correct, null);
+      }
+      panel.remove();
+      this.showNotification(
+        pairs.length === 1 ? '✅ Reported! Thank you 🙏' : `✅ ${pairs.length} words reported! Thank you 🙏`,
+        'success'
+      );
+    });
+    correctInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitBtn.click();
+    });
+
+    panel.appendChild(header);
+    panel.appendChild(wrongLabel);
+    panel.appendChild(wrongWordEl);
+    panel.appendChild(correctLabel);
+    panel.appendChild(correctInput);
+    panel.appendChild(submitBtn);
+    document.body.appendChild(panel);
+
+    // Always position top-right, right under the browser toolbar / extension icon
+    panel.style.top = '52px';
+    panel.style.right = '12px';
+    panel.style.left = '';
+
+    // Animate in
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(8px)';
+    requestAnimationFrame(() => {
+      panel.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      panel.style.opacity = '1';
+      panel.style.transform = 'translateY(0)';
+    });
+
+    correctInput.focus();
+  }
+
+  async submitReport(wrongWord, correctWord, panel) {
+    const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdkButKdnqvsIuW0e02t2vb32AAipIpwBI2OFIl6VNe9C7fvw/formResponse';
+    const value = `${wrongWord} → ${correctWord}`;
+    try {
+      const body = new URLSearchParams();
+      body.append('entry.1321325259', value);
+      await fetch(FORM_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      });
+      if (panel) { panel.remove(); this.showNotification('✅ Reported! Thank you 🙏', 'success'); }
+    } catch (e) {
+      // Fallback: open pre-filled form tab
+      const url = `https://docs.google.com/forms/d/e/1FAIpQLSdkButKdnqvsIuW0e02t2vb32AAipIpwBI2OFIl6VNe9C7fvw/viewform?usp=pp_url&entry.1321325259=${encodeURIComponent(value)}`;
+      window.open(url, '_blank');
+      if (panel) panel.remove();
+      this.showNotification('✅ Opening report form…', 'info');
+    }
   }
 
   // ─── DICTIONARY & VALIDATION ───────────────────────────────────────
@@ -402,20 +778,40 @@ class ModernLayoutDetector {
       document.body.removeChild(progressBar);
       document.body.removeChild(scanLine);
 
-      // Phase 2: Find Wrong Words
+      // Phase 2: Find wrong words + stuck ones
       const wrongWords = this.findWrongWords(element);
+      const stuckWordsList = this.findStuckWords(element);
 
-      if (wrongWords.length === 0) {
+      if (wrongWords.length === 0 && stuckWordsList.length === 0) {
         this.showNotification('✅ No wrong words found! Text looks perfect.', 'success');
         this.isCorrectingNow = false;
         return;
       }
 
-      // Phase 3: Highlight + Correct
+      // Phase 3: Highlight wrong + stuck simultaneously
+      const stuckHighlight = this.createStuckWordHighlights(element, stuckWordsList);
       await this.epicHighlightWrongWords(element, wrongWords);
       await this.delay(450);
       await this.delay(240);
-      await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
+
+      if (wrongWords.length > 0) {
+        await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
+      }
+
+      // Phase 4: Plain toast + fade orange box + show "not in dictionary" label at 890ms
+      if (stuckWordsList.length > 0) {
+        const stuckMsg = stuckWordsList.length === 1
+          ? `⚠️ "${stuckWordsList[0]}" couldn't be converted`
+          : `⚠️ ${stuckWordsList.length} words couldn't be converted`;
+        this.showNotification(stuckMsg, 'warning');
+
+        setTimeout(() => {
+          if (stuckHighlight) {
+            // Don't remove the orange box here — let createNotInDictLabel own its lifetime
+            this.createNotInDictLabel(stuckWordsList, stuckHighlight, element, stuckHighlight);
+          }
+        }, 890);
+      }
     } catch (e) {
       console.warn('⚠️ Auto-fix failed:', e.message);
       this.showNotification('❌ Something went wrong. Please try again.', 'warning');
@@ -487,6 +883,58 @@ class ModernLayoutDetector {
     return wrongWords;
   }
 
+  // Find words that are already correct in their language (for green highlight)
+  findCorrectWords(element) {
+    const text = element.value || element.textContent || '';
+    if (!text || !this.dictsLoaded) return [];
+
+    const words = text.split(/(\s+)/);
+    const correctWords = [];
+    let position = 0;
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const trimmedWord = word.trim();
+
+      if (trimmedWord.length >= 2 &&
+        !(/^\d+$/.test(trimmedWord)) &&
+        !this.shouldSkipWord(trimmedWord) &&
+        this.isRealWord(trimmedWord)) {
+        correctWords.push({
+          original: trimmedWord,
+          start: position,
+          end: position + word.length,
+          isArabic: this.hasArabic(trimmedWord)
+        });
+      }
+      position += word.length;
+    }
+    return correctWords;
+  }
+
+  // Create green highlight boxes for already-correct words
+  createCorrectWordHighlights(element, correctWords) {
+    const highlights = [];
+    const PAD = 3;
+    for (const wordData of correctWords) {
+      const pos = this.getPreciseWordPosition(element, wordData.start, wordData.end);
+      const h = document.createElement('div');
+      h.className = 'correct-word-highlight';
+      h.style.left = (pos.x - PAD) + 'px';
+      h.style.top = (pos.y - PAD) + 'px';
+      h.style.width = (pos.width + PAD * 2) + 'px';
+      h.style.height = (pos.height + PAD * 2) + 'px';
+      document.body.appendChild(h);
+      highlights.push(h);
+      requestAnimationFrame(() => {
+        h.style.transition = 'all 0.35s ease-out';
+        h.style.opacity = '1';
+        h.style.transform = 'scale(1)';
+      });
+    }
+    return highlights;
+  }
+
   // Find ALL convertible words, bypassing dictionary validation (for Ctrl+Shift+Q force fix)
   findAllConvertibleWords(element) {
     const text = element.value || element.textContent || '';
@@ -520,12 +968,6 @@ class ModernLayoutDetector {
             position += word.length;
             continue;
           }
-        }
-
-        // Skip words that are already correct in their language
-        if (this.isRealWord(trimmedWord)) {
-          position += word.length;
-          continue;
         }
 
         let converted = this.convertText(trimmedWord);
@@ -925,10 +1367,10 @@ class ModernLayoutDetector {
     }
 
     if (this.hasArabic(text)) {
-      const asB  = window.faLayout.toEnB(text);
+      const asB = window.faLayout.toEnB(text);
       const asGH = window.faLayout.toEn(text);
 
-      if (asB  !== text && this.isRealWord(asB))  return asB;
+      if (asB !== text && this.isRealWord(asB)) return asB;
       if (asGH !== text && this.isRealWord(asGH)) return asGH;
       return asB !== text ? asB : asGH;
     } else if (window.faLayout.hasEnglish(text) || (includeNumbers && /\d/.test(text))) {
@@ -940,22 +1382,26 @@ class ModernLayoutDetector {
 
   // Write text to any supported element type.
   // For plain input/textarea: set .value directly.
-  // For contentEditable (CKEditor, Teams, Notion, etc.): use execCommand('insertText')
-  // so the host framework's event listeners fire and the change sticks.
+  // For contentEditable: try execCommand('insertText') first so rich-text editors
+  // like CKEditor/Teams intercept it properly, then fall back to textContent.
   writeToElement(element, text) {
     if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
       element.value = text;
       element.dispatchEvent(new Event('input', { bubbles: true }));
     } else if (element.contentEditable === 'true') {
       element.focus();
-      // Select all existing content then replace via insertText.
-      // execCommand fires proper InputEvent that frameworks like CKEditor intercept.
+      // Try execCommand — works for CKEditor, Teams, Notion, etc.
       const sel = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(element);
       sel.removeAllRanges();
       sel.addRange(range);
-      document.execCommand('insertText', false, text);
+      const success = document.execCommand('insertText', false, text);
+      // Fallback for apps where execCommand is blocked or unsupported
+      if (!success || element.textContent !== text) {
+        element.textContent = text;
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
   }
 

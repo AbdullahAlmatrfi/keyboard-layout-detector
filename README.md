@@ -1,128 +1,195 @@
-# 🚀 Keyboard Layout Detector Extension v3.0
+﻿# ⌨️ Keyboard Layout Detector — v4.0
 
-A revolutionary Chrome extension that automatically detects and corrects keyboard layout mistakes with **epic animations** and **lightning-fast performance**.
+A Chrome extension that automatically detects and fixes **Arabic ↔ English keyboard layout mistakes** in any input field or content-editable area on any website.
 
-## ✨ New in Version 3.0
+---
 
-### 🎯 **Unified Highlighting System**
-- **ONE beautiful highlight** covering ALL wrong words (no more cluttered individual highlights)
-- **Smart unified label** showing all corrections in a single preview
-- **Epic visual effects** with gradient backgrounds and smooth animations
+## 🌟 What It Does
 
-### ⚡ **70% Performance Boost**
-- **Lightning-fast corrections** - complete process now 70% faster
-- **Optimized animations** with pure CSS (no external dependencies)
-- **Instant feedback** with sub-second response times
+When you accidentally type Arabic text while your keyboard is in English mode (or vice versa), this extension instantly detects the mistake and corrects it with a single shortcut — no copy-paste, no manual retyping.
 
-### 🎹 **Enhanced Keyboard Shortcuts**
-- **Ctrl+Alt**: Epic Auto-Fix ALL wrong words with unified highlighting
-- **Ctrl+Q**: Fix current word at cursor position
-- **Ctrl+Shift+Q**: Force fix ALL words (bypasses dictionary validation)
-- **Ctrl+Z**: Undo last correction with visual feedback
+**Example:**
+- You type `اسممخ` but meant `hello` → press **Ctrl+Alt** → instantly corrected ✅
+- You type `hsgdh` but meant `اهلا` → same shortcut → fixed in milliseconds ✅
 
-### 🎬 **Pure CSS Animation Engine**
-- **No external dependencies** - removed Anime.js for better compatibility
-- **Smooth transitions** with optimized cubic-bezier curves
-- **Hardware acceleration** for buttery smooth performance
+---
 
-## 🌟 Features
+## ⚡ Keyboard Shortcuts
 
-### **Core Functionality**
-- **🔍 Real-time Detection**: Automatically detects wrong keyboard layout while typing
-- **🎯 Epic Progressive Highlighting**: Beautiful unified highlight covering all wrong words
-- **⚡ One-Click Correction**: Instant text replacement with stunning animations
-- **🎨 Visual Feedback**: Gorgeous success animations and notifications
-- **↩️ Smart Undo**: Full correction history with undo capability
-
-### **Advanced Features**
-- **📱 Popup Controls**: Manual correction triggers and status display
-- **🔧 Debug System**: Comprehensive logging for troubleshooting
-- **🌍 RTL Support**: Perfect right-to-left text handling
-- **🎯 Precise Positioning**: Pixel-perfect highlight placement
-- **💾 Session Memory**: Prevents repeated corrections of same words
-
-### **User Experience**
-- **⚡ Lightning Fast**: 70% faster than previous versions
-- **🎨 Beautiful UI**: Unified highlights with gradient effects
-- **🔄 Smooth Animations**: Epic transitions and transformations
-- **📱 Non-intrusive**: Clean interface that doesn't interfere with work
-- **🎹 Keyboard Friendly**: Powerful shortcuts for power users
-
-## 🚀 How It Works
-
-### **Epic Animation Sequence**
-1. **🔍 Scan Phase**: Epic scanning animation across the text
-2. **🎯 Detection**: Smart analysis finding all wrong words
-3. **✨ Highlighting**: Unified beautiful highlight covering all errors
-4. **⚡ Correction**: Lightning-fast text replacement with success animation
-5. **🧹 Cleanup**: Smooth fadeout and element removal
-
-### **Keyboard Shortcuts**
-- **Ctrl+Alt**: Trigger epic auto-fix for all wrong words
-- **Ctrl+Q**: Fix only the current word at cursor
-- **Ctrl+Shift+Q**: Force fix entire sentence (ignores dictionary)
-- **Ctrl+Z**: Undo the last correction
-
-### **Supported Conversions**
-- **Arabic → English**: `hsgdh` → `اهلا` (typed with English keyboard)
-- **English → Arabic**: `اهممخ` → `hello` (typed with Arabic keyboard)
-- **Mixed Text**: Handles multiple wrong words simultaneously
-
-### **Number Handling**
-Numbers are **not** keyboard layout mistakes, so the extension treats them differently:
-
-| Scenario | What happens |
+| Shortcut | Action |
 |---|---|
-| `123` with auto-fix (Ctrl+Alt) | Stays `123` — skipped |
-| `test123` with auto-fix | Letters convert, `123` stays |
-| `0551234567` with auto-fix | Stays unchanged — phone numbers are safe |
-| `123` with manual fix (Ctrl+Q) | Converts to `۱۲۳` — manual conversion always available |
+| **Ctrl + Alt** | Auto-fix all wrong words in the active field |
+| **Ctrl + Q** | Fix only the current word at the cursor position |
+| **Ctrl + Shift + Q** | Force-fix every word (bypasses dictionary — converts everything) |
+| **Ctrl + Z** | Undo the last correction and restore original text |
 
-> **Note:** Ctrl+Q on the same word works once. This is by design — the extension remembers what it already fixed to avoid repeated corrections.
+---
 
-### **Supported Input Fields**
-The extension works on these input types found on web pages:
+## 🔍 Smart Scan — Visual Feedback System
 
-| Input Type | Supported |
+Pressing **Ctrl+Alt** triggers a **4-phase progressive scan** with rich visual feedback:
+
+### Phase 1 — Scanning
+A sweep animation plays across the input field to signal detection is running.
+
+### Phase 2 — Analysis
+The text is analyzed word by word against the built-in dictionary.
+
+### Phase 3 — Highlights
+- 🔴 **Red box** — words that were typed in the wrong layout and will be corrected
+- 🟠 **Orange box** — words that appear to be wrong-layout but are **not found in the dictionary** (stuck words)
+
+### Phase 4 — Label for Stuck Words (890 ms)
+If any stuck words exist, a floating label appears above (or below, near the top of the screen) the orange box:
+
+```
+⚠ not in dictionary
+click to add 👆
+```
+
+- **Glassmorphism style**: warm amber → deep-orange gradient with `backdrop-filter` blur
+- **Hover to keep**: hovering the label (or the orange box) pauses auto-dismiss
+- **Auto-fades** after 3 seconds if not interacted with
+- **Click to report**: opens the Report Panel directly
+
+---
+
+## 📋 Report Panel — "Not in Dictionary" Flow
+
+When you click the label, a floating panel appears anchored to the input:
+
+- **Single stuck word** → text input: "Should be: ______"
+- **Multiple stuck words** → dropdown selector; each word's correction is stored separately
+- **Submit** → sends all filled corrections to our dictionary improvement form
+- Shows `✅ N words reported!` on success
+
+---
+
+## 💬 Feedback
+
+The popup includes a **"💬 Send feedback"** button that opens a Google Form pre-filled with your feedback. No data is collected automatically — only what you voluntarily type and submit.
+
+---
+
+## ↩️ Undo System
+
+Every correction is saved in a per-session stack:
+
+| Action | Undo |
 |---|---|
-| `<input type="text">`      | ✅ |
-| `<input type="search">`    | ✅ |
-| `<input type="email">`     | ✅ |
-| `<input type="tel">`       | ✅ |
-| `<input type="url">`       | ✅ |
-| `<textarea>`               | ✅ |
+| Ctrl+Q — single word | Ctrl+Z restores original |
+| Ctrl+Alt — auto-fix all | Ctrl+Z restores original |
+| Ctrl+Shift+Q — force fix | Ctrl+Z restores original |
+| Multiple fixes | Ctrl+Z multiple times (LIFO order) |
+
+---
+
+## 📖 Dictionary System
+
+Two built-in JSON dictionaries power the detection:
+
+| File | Language Set |
+|---|---|
+| `dict-en.json` | English words |
+| `dict-ar.json` | Arabic words |
+
+Words found in the dictionary are considered valid and will not be flagged. Unknown words trigger the orange "stuck" box and allow you to report them for future dictionary additions.
+
+---
+
+## 🔢 Number Handling
+
+Numbers are never keyboard layout mistakes:
+
+| Scenario | Behavior |
+|---|---|
+| `123` with Ctrl+Alt | Unchanged — numbers are skipped |
+| `test123` with Ctrl+Alt | Letters convert, `123` stays |
+| `0551234567` (phone) | Stays unchanged |
+| `123` with Ctrl+Q (manual) | Converts to `۱۲۳` — manual always available |
+
+---
+
+## 🌐 Supported Input Fields
+
+Works on any website with these input types:
+
+| Type | Supported |
+|---|---|
+| `<input type="text">` | ✅ |
+| `<input type="search">` | ✅ |
+| `<input type="email">` | ✅ |
+| `<input type="tel">` | ✅ |
+| `<input type="url">` | ✅ |
+| `<textarea>` | ✅ |
 | `contentEditable` elements | ✅ |
-| `<input type="password">`  | ✅ |
+| Password fields | ✅ (if enabled) |
+| Browser address bar | ❌ (browser security restriction) |
 
-> **Note:** The browser's address bar (top URL bar) is not a web page element — no extension can access it due to Chrome security restrictions.
+> Works across **all frames** on the page (`all_frames: true`), including embedded iframes (e.g. Google Docs, Twitter compose).
 
-### **Undo System**
-Every correction can be undone:
+---
 
-| Action | Undo with |
-|---|---|
-| Ctrl+Q (single word fix) | Ctrl+Z — restores original text |
-| Ctrl+Shift+Q (force fix all) | Ctrl+Z — restores original text |
-| Ctrl+Alt (auto-fix all) | Ctrl+Z — restores original text |
-| Multiple fixes in a row | Ctrl+Z multiple times — undoes one at a time (LIFO) |
-
-> **Note:** Ctrl+Q now shows a notification if no word is found at the cursor, so you always know what's happening.
-
-## Installation
+## 🛠 Installation (Developer Mode)
 
 1. Download or clone this repository
 2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the extension folder
-5. The extension will be active on all websites
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked** and select the extension folder
+5. The extension is now active on all websites
 
-## Files Structure
-npacked" and select the extension folder
-5. The extension will be active on all websites
+---
 
-## Files Structure
->>>>>>> ff6ae7410048e47de3b7fea5c6b94c97e403ce57
-Load unpacked" and select the extension folder
-5. The extension will be active on all websites
+## 📁 File Structure
 
-## Files Structure
+```
+keyboard-layout-detector/
+├── manifest.json        # Chrome MV3 manifest
+├── content.js           # Core logic: detection, highlighting, correction, scan
+├── fa-layout.js         # Arabic ↔ English keyboard layout mapping table
+├── styles.css           # All injected UI styles (highlights, labels, panels, toast)
+├── popup.html           # Extension popup UI
+├── popup.js             # Popup logic (status display, feedback button)
+├── popup.css            # Popup styles
+├── dict-en.json         # English dictionary (Set)
+├── dict-ar.json         # Arabic dictionary (Set)
+├── icon16.png           # Extension icons
+├── icon48.png
+└── icon128.png
+```
+
+---
+
+## 🆕 What's New in v4.0
+
+### Smart Scan Visual Overhaul
+- Merged all stuck words into a **single unified orange bounding box** (no more overlapping boxes)
+- Removed distracting green highlights — scan now only shows red (wrong) + orange (stuck)
+- Smooth `ease-out` transitions replacing old bouncy cubic-bezier curves
+
+### "Not in Dictionary" Label
+- Two-line floating label: `⚠ not in dictionary` + `click to add 👆`
+- **Glassmorphism design**: amber-to-orange gradient + `backdrop-filter` blur + gold rim border + inset glass shine
+- **Smart flip positioning**: appears above the orange box by default; flips below automatically when near the top of the screen (e.g. YouTube/Google search bars)
+- **Hover persistence**: hovering pauses auto-dismiss for both the label and the orange box together
+- **3-second auto-fade** with smooth opacity transition
+
+### Per-Word Report Panel
+- Dropdown selector when multiple stuck words exist
+- Each correction stored individually in a `corrections` map
+- Submit sends all corrections at once with a single confirmation
+
+### Popup Simplified
+- Removed word-input / auto-fill fields from popup
+- Replaced with a single **"💬 Send feedback"** button linking to Google Form
+
+### UX Polish
+- Toast dismissed automatically when report panel opens
+- All highlight boxes use consistent 4px padding
+- Maximum `z-index` (`2147483647`) on all floating elements to prevent hiding behind site headers
+
+---
+
+## 📄 License
+
+MIT — free to use, fork, and improve.

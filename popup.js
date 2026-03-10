@@ -138,5 +138,13 @@ pauseExtension.addEventListener('change', () => {
   updateStatus();
 });
 
+// ─── FEEDBACK SECTION ────────────────────────────────────────────────
+
+const FEEDBACK_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdkButKdnqvsIuW0e02t2vb32AAipIpwBI2OFIl6VNe9C7fvw/viewform?usp=pp_url&entry.706574375=';
+
+document.getElementById('feedbackBtn').addEventListener('click', () => {
+  chrome.tabs.create({ url: FEEDBACK_URL });
+});
+
 // Check undo availability when popup opens
 setTimeout(checkUndoAvailability, 100);
