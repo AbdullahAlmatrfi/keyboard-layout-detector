@@ -61,7 +61,19 @@
     <div class="divider"></div>
 
     <div class="feedback-section">
-      <button id="feedbackBtn" class="feedback-submit-btn">💬 Send feedback</button>
+      <button id="feedbackBtn" class="action-btn feedback">
+        <span class="btn-icon">💬</span>
+        <div class="btn-content">
+          <div class="btn-title">Send Feedback</div>
+          <div class="btn-desc">Help us improve the dictionary</div>
+        </div>
+      </button>
+      <div id="feedbackPanel" class="feedback-panel">
+        <textarea id="feedbackText" class="feedback-textarea"
+          placeholder="What's on your mind? Share any words, bugs, or ideas..."></textarea>
+        <button id="feedbackSubmit" class="feedback-send-btn">✉️ Send</button>
+        <div id="feedbackSuccess" class="feedback-success">✅ Report received successfully!</div>
+      </div>
     </div>
 
     <div id="status" class="status"></div>

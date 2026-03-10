@@ -140,10 +140,33 @@ pauseExtension.addEventListener('change', () => {
 
 // ─── FEEDBACK SECTION ────────────────────────────────────────────────
 
-const FEEDBACK_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdkButKdnqvsIuW0e02t2vb32AAipIpwBI2OFIl6VNe9C7fvw/viewform?usp=pp_url&entry.706574375=';
+const FEEDBACK_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdkButKdnqvsIuW0e02t2vb32AAipIpwBI2OFIl6VNe9C7fvw/formResponse';
+const feedbackBtn = document.getElementById('feedbackBtn');
+const feedbackPanel = document.getElementById('feedbackPanel');
+const feedbackText = document.getElementById('feedbackText');
+const feedbackSubmit = document.getElementById('feedbackSubmit');
+const feedbackSuccess = document.getElementById('feedbackSuccess');
 
-document.getElementById('feedbackBtn').addEventListener('click', () => {
-  chrome.tabs.create({ url: FEEDBACK_URL });
+feedbackBtn.addEventListener('click', () => {
+  const isOpen = feedbackPanel.classList.contains('open');
+  feedbackPanel.classList.toggle('open', !isOpen);
+  if (!isOpen) feedbackText.focus();
+});
+
+feedbackSubmit.addEventListener('click', () => {
+  const text = feedbackText.value.trim();
+  if (!text) {
+    feedbackText.style.borderColor = '#ef4444';
+    setTimeout(() => { feedbackText.style.borderColor = ''; }, 1200);
+    return;
+  }
+  const body = new FormData();
+  body.append('entry.706574375', text);
+  fetch(FEEDBACK_FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => { });
+  feedbackText.value = '';
+  feedbackPanel.classList.remove('open');
+  feedbackSuccess.classList.add('show');
+  setTimeout(() => { feedbackSuccess.classList.remove('show'); }, 3500);
 });
 
 // Check undo availability when popup opens
