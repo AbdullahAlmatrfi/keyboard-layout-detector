@@ -97,7 +97,8 @@
   font-size: 13px;
   font-family: inherit;
   outline: none;
-  background: #f9fafb;
+  background: #f9fafb !important;
+  color: #111827 !important;
   transition: border-color 0.2s, background 0.2s;
 }
 
@@ -110,6 +111,19 @@
   cursor: pointer;
   appearance: auto;
   padding-right: 8px;
+}
+
+.kld-report-select option {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.kld-report-hint {
+  font-size: 10.5px;
+  color: #9ca3af;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-style: italic;
 }
 
 .kld-report-submit {

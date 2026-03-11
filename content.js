@@ -306,12 +306,13 @@ class ModernLayoutDetector {
     if (!text) return null;
 
     // Collect positions for all stuck words
+    const originals = stuckWords.map(s => s.original);
     const positions = [];
     const tokens = text.split(/(\s+)/);
     let position = 0;
     for (const token of tokens) {
       const trimmed = token.trim();
-      if (stuckWords.includes(trimmed)) {
+      if (originals.includes(trimmed)) {
         positions.push(this.getPreciseWordPosition(element, position, position + token.length));
       }
       position += token.length;
@@ -343,8 +344,9 @@ class ModernLayoutDetector {
   createNotInDictLabel(words, highlightEl, element, orangeBox = null) {
     const label = document.createElement('div');
     label.className = 'kld-not-in-dict-label';
+    const displayWords = words.map(w => (typeof w === 'object' ? w.original : w));
     const line1 = document.createElement('div');
-    line1.textContent = words.length === 1 ? '⚠ not in dictionary' : `⚠ ${words.length} words not in dictionary`;
+    line1.textContent = displayWords.length === 1 ? '⚠ not in dictionary' : `⚠ ${displayWords.length} words not in dictionary`;
     const line2 = document.createElement('div');
     line2.className = 'kld-not-in-dict-sub';
     line2.textContent = 'click to add 👆';
@@ -433,6 +435,7 @@ class ModernLayoutDetector {
     const text = element.value || element.textContent || '';
     if (!text || !this.dictsLoaded) return [];
 
+    const seen = new Set();
     const stuckWords = [];
     for (const token of text.split(/\s+/)) {
       const w = token.trim();
@@ -443,14 +446,18 @@ class ModernLayoutDetector {
       const converted = this.convertText(w);
       if (converted === w) continue;              // no conversion mapping at all
       if (this.isRealWord(converted)) continue;  // was successfully converted
-      stuckWords.push(w);
+      if (seen.has(w)) continue;
+      seen.add(w);
+      stuckWords.push({ original: w, converted });
     }
-    return [...new Set(stuckWords)];
+    return stuckWords;
   }
 
   // Floating on-page report panel
   showReportPanel(wrongWordRaw, anchorElement) {
-    const words = Array.isArray(wrongWordRaw) ? wrongWordRaw : [wrongWordRaw];
+    // Normalise: always work with {original, converted} objects internally
+    const rawArr = Array.isArray(wrongWordRaw) ? wrongWordRaw : [wrongWordRaw];
+    const words = rawArr.map(w => typeof w === 'string' ? { original: w, converted: '' } : w);
     // Dismiss any active toast
     if (this.toastEl) {
       this.toastEl.classList.remove('toast-breathing');
@@ -485,43 +492,47 @@ class ModernLayoutDetector {
     wrongLabel.className = 'kld-report-label';
     wrongLabel.textContent = 'Wrong word typed:';
 
-    // Per-word correction map: word → typed correction (remembers each separately)
-    const corrections = Object.fromEntries(words.map(w => [w, '']));
+    // Per-word correction map: original → correction (pre-filled with computed conversion)
+    const corrections = Object.fromEntries(words.map(w => [w.original, w.converted || '']));
 
     let wrongWordEl;
     if (words.length === 1) {
       wrongWordEl = document.createElement('input');
       wrongWordEl.className = 'kld-report-input';
       wrongWordEl.type = 'text';
-      wrongWordEl.value = words[0];
+      wrongWordEl.value = words[0].original;
+      wrongWordEl.readOnly = true;
     } else {
       wrongWordEl = document.createElement('select');
       wrongWordEl.className = 'kld-report-input kld-report-select';
       words.forEach(w => {
         const opt = document.createElement('option');
-        opt.value = w;
-        opt.textContent = w;
+        opt.value = w.original;
+        opt.textContent = w.original;
         wrongWordEl.appendChild(opt);
       });
     }
 
-    // Correct word input
+    // Correct word input — pre-filled with the computed conversion
     const correctLabel = document.createElement('div');
     correctLabel.className = 'kld-report-label';
     correctLabel.textContent = words.length === 1 ? 'Should be:' : `Should be: (word 1 of ${words.length})`;
     const correctInput = document.createElement('input');
     correctInput.className = 'kld-report-input';
     correctInput.type = 'text';
-    correctInput.placeholder = 'Type the correct word…';
+    correctInput.placeholder = 'Confirm or edit the correct word…';
+    correctInput.value = words[0].converted || '';
 
+    // Small hint under the pre-filled suggestion
+    const hint = document.createElement('div');
+    hint.className = 'kld-report-hint';
+    hint.textContent = 'Is this correct? Edit if needed.';
     // When dropdown changes: save current correction, load stored one for new selection
     if (words.length > 1) {
-      let lastSelected = words[0];
+      let lastSelected = words[0].original;
       wrongWordEl.addEventListener('change', () => {
-        // Save correction typed for the word we just left
         corrections[lastSelected] = correctInput.value;
         lastSelected = wrongWordEl.value;
-        // Load stored correction for newly selected word
         correctInput.value = corrections[lastSelected] || '';
         const idx = wrongWordEl.selectedIndex + 1;
         correctLabel.textContent = `Should be: (word ${idx} of ${words.length})`;
@@ -535,10 +546,9 @@ class ModernLayoutDetector {
     submitBtn.className = 'kld-report-submit';
     submitBtn.textContent = '📤 Submit';
     submitBtn.addEventListener('click', async () => {
-      // Save whatever is currently typed before reading the map
       corrections[wrongWordEl.value] = correctInput.value;
 
-      const pairs = words.map(w => ({ wrong: w, correct: corrections[w].trim() })).filter(p => p.correct);
+      const pairs = words.map(w => ({ wrong: w.original, correct: corrections[w.original].trim() })).filter(p => p.correct);
       if (!pairs.length) {
         correctInput.style.border = '1.5px solid #ef4444';
         correctInput.focus();
@@ -549,9 +559,17 @@ class ModernLayoutDetector {
       for (const { wrong, correct } of pairs) {
         await this.submitReport(wrong, correct, null);
       }
+      // Apply conversions directly in the text field
+      if (anchorElement) {
+        let text = anchorElement.value || anchorElement.textContent || '';
+        for (const { wrong, correct } of pairs) {
+          text = text.replace(new RegExp(`(?<![\\w\u0600-\u06ff])${wrong.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w\u0600-\u06ff])`, 'g'), correct);
+        }
+        this.writeToElement(anchorElement, text);
+      }
       panel.remove();
       this.showNotification(
-        pairs.length === 1 ? '✅ Reported! Thank you 🙏' : `✅ ${pairs.length} words reported! Thank you 🙏`,
+        pairs.length === 1 ? '✅ Reported & converted! Thank you 🙏' : `✅ ${pairs.length} words reported & converted! Thank you 🙏`,
         'success'
       );
     });
@@ -564,6 +582,7 @@ class ModernLayoutDetector {
     panel.appendChild(wrongWordEl);
     panel.appendChild(correctLabel);
     panel.appendChild(correctInput);
+    panel.appendChild(hint);
     panel.appendChild(submitBtn);
     document.body.appendChild(panel);
 
@@ -756,29 +775,7 @@ class ModernLayoutDetector {
     this.isCorrectingNow = true;
 
     try {
-      // Phase 1: Scanning Animation
-      const progressBar = this.createEpicScanProgressBar();
-      const scanLine = this.createEpicScanLine(element);
-
-      progressBar.style.transition = 'width 0.6s ease-in-out';
-      progressBar.style.width = '100%';
-      const rect = element.getBoundingClientRect();
-      const style = window.getComputedStyle(element);
-      const paddingLeft = parseInt(style.paddingLeft) || 0;
-      const paddingRight = parseInt(style.paddingRight) || 0;
-      const textAreaWidth = rect.width - paddingLeft - paddingRight;
-
-      scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
-      scanLine.style.opacity = '1';
-      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
-
-      await this.delay(660);
-
-      // Remove scanning elements
-      document.body.removeChild(progressBar);
-      document.body.removeChild(scanLine);
-
-      // Phase 2: Find wrong words + stuck ones
+      // B: Run analysis in parallel with the scan animation
       const wrongWords = this.findWrongWords(element);
       const stuckWordsList = this.findStuckWords(element);
 
@@ -788,29 +785,51 @@ class ModernLayoutDetector {
         return;
       }
 
+      // Phase 1: Scanning Animation (A: trimmed to 320ms)
+      const progressBar = this.createEpicScanProgressBar();
+      const scanLine = this.createEpicScanLine(element);
+
+      progressBar.style.transition = 'width 0.3s ease-in-out';
+      progressBar.style.width = '100%';
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      const paddingLeft = parseInt(style.paddingLeft) || 0;
+      const paddingRight = parseInt(style.paddingRight) || 0;
+      const textAreaWidth = rect.width - paddingLeft - paddingRight;
+
+      scanLine.style.transition = 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out';
+      scanLine.style.opacity = '1';
+      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
+
+      await this.delay(320);
+
+      // Remove scanning elements
+      document.body.removeChild(progressBar);
+      document.body.removeChild(scanLine);
+
       // Phase 3: Highlight wrong + stuck simultaneously
       const stuckHighlight = this.createStuckWordHighlights(element, stuckWordsList);
       await this.epicHighlightWrongWords(element, wrongWords);
-      await this.delay(450);
-      await this.delay(240);
+      await this.delay(200); // A: was 450+240=690ms
 
       if (wrongWords.length > 0) {
         await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
       }
 
-      // Phase 4: Plain toast + fade orange box + show "not in dictionary" label at 890ms
+      // Phase 4: Show "not in dictionary" label — dismiss success toast at same moment to avoid collision
       if (stuckWordsList.length > 0) {
-        const stuckMsg = stuckWordsList.length === 1
-          ? `⚠️ "${stuckWordsList[0]}" couldn't be converted`
-          : `⚠️ ${stuckWordsList.length} words couldn't be converted`;
-        this.showNotification(stuckMsg, 'warning');
-
         setTimeout(() => {
+          // Dismiss the success toast so it doesn't collide with the label
+          if (this.toastEl) {
+            this.toastEl.style.transition = 'opacity 0.2s ease';
+            this.toastEl.style.opacity = '0';
+            this.toastEl.style.pointerEvents = 'none';
+            if (this._toastHideTimer) { clearTimeout(this._toastHideTimer); this._toastHideTimer = null; }
+          }
           if (stuckHighlight) {
-            // Don't remove the orange box here — let createNotInDictLabel own its lifetime
             this.createNotInDictLabel(stuckWordsList, stuckHighlight, element, stuckHighlight);
           }
-        }, 890);
+        }, 450);
       }
     } catch (e) {
       console.warn('⚠️ Auto-fix failed:', e.message);
@@ -1006,29 +1025,7 @@ class ModernLayoutDetector {
     this.isCorrectingNow = true;
 
     try {
-      // Phase 1: Scanning animation
-      const progressBar = this.createEpicScanProgressBar();
-      const scanLine = this.createEpicScanLine(element);
-
-      progressBar.style.transition = 'width 0.6s ease-in-out';
-      progressBar.style.width = '100%';
-
-      const rect = element.getBoundingClientRect();
-      const style = window.getComputedStyle(element);
-      const paddingLeft = parseInt(style.paddingLeft) || 0;
-      const paddingRight = parseInt(style.paddingRight) || 0;
-      const textAreaWidth = rect.width - paddingLeft - paddingRight;
-
-      scanLine.style.transition = 'transform 0.6s ease-in-out, opacity 0.6s ease-in-out';
-      scanLine.style.opacity = '1';
-      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
-
-      await this.delay(660);
-
-      document.body.removeChild(progressBar);
-      document.body.removeChild(scanLine);
-
-      // Phase 2: Find ALL convertible words (no dictionary filter)
+      // B: Run analysis in parallel with the scan animation
       const convertibleWords = this.findAllConvertibleWords(element);
 
       if (convertibleWords.length === 0) {
@@ -1037,10 +1034,31 @@ class ModernLayoutDetector {
         return;
       }
 
+      // Phase 1: Scanning animation (A: trimmed to 320ms)
+      const progressBar = this.createEpicScanProgressBar();
+      const scanLine = this.createEpicScanLine(element);
+
+      progressBar.style.transition = 'width 0.3s ease-in-out';
+      progressBar.style.width = '100%';
+
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      const paddingLeft = parseInt(style.paddingLeft) || 0;
+      const paddingRight = parseInt(style.paddingRight) || 0;
+      const textAreaWidth = rect.width - paddingLeft - paddingRight;
+
+      scanLine.style.transition = 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out';
+      scanLine.style.opacity = '1';
+      scanLine.style.transform = `translateX(${textAreaWidth}px)`;
+
+      await this.delay(320);
+
+      document.body.removeChild(progressBar);
+      document.body.removeChild(scanLine);
+
       // Phase 3: Highlight + Correct
       await this.epicHighlightWrongWords(element, convertibleWords);
-      await this.delay(450);
-      await this.delay(240);
+      await this.delay(200); // A: was 450+240=690ms
       await this.applyEpicCorrectionsWithAnimation(element, convertibleWords);
     } catch (e) {
       console.warn('⚠️ Force fix failed:', e.message);

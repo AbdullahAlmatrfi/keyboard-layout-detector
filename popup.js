@@ -46,7 +46,9 @@ function updateStatus() {
 
 function checkUndoAvailability() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: 'checkUndo' }, (response) => {
+      if (chrome.runtime.lastError) return; // tab has no content script (e.g. chrome:// pages)
       if (response && response.hasUndo) {
         undoBtn.style.display = 'block';
       } else {
@@ -61,7 +63,9 @@ fixCurrentWordBtn.addEventListener('click', () => {
   if (pauseExtension.checked) return;
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: 'fixCurrentWord' }, (response) => {
+      if (chrome.runtime.lastError) { status.textContent = '❌ No active text field'; setTimeout(() => updateStatus(), 2000); return; }
       if (response && response.success) {
         status.textContent = `✅ Fixed: "${response.original}" → "${response.converted}"`;
         checkUndoAvailability();
@@ -81,7 +85,9 @@ autoFixAllBtn.addEventListener('click', () => {
   status.textContent = '🔍 Scanning for wrong words...';
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: 'autoFixAll' }, (response) => {
+      if (chrome.runtime.lastError) { status.textContent = '❌ No active text field'; setTimeout(() => updateStatus(), 2000); return; }
       if (response && response.count > 0) {
         status.textContent = `🎉 Fixed ${response.count} word(s) with epic animations!`;
         checkUndoAvailability();
@@ -101,7 +107,9 @@ forceFixAllBtn.addEventListener('click', () => {
   status.textContent = '💪 Force-converting all words...';
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: 'forceFixAll' }, (response) => {
+      if (chrome.runtime.lastError) { status.textContent = '❌ No active text field'; setTimeout(() => updateStatus(), 2000); return; }
       if (response && response.success) {
         status.textContent = '💪 Force-fixed all words!';
         checkUndoAvailability();
@@ -119,7 +127,9 @@ undoBtn.addEventListener('click', () => {
   if (pauseExtension.checked) return;
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: 'undo' }, (response) => {
+      if (chrome.runtime.lastError) { status.textContent = '❌ Nothing to undo'; setTimeout(() => updateStatus(), 2000); return; }
       if (response && response.success) {
         status.textContent = '↶ Undone successfully!';
         checkUndoAvailability();
