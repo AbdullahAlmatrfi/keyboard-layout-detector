@@ -13,12 +13,15 @@
       <h2>🔤 Layout Detector</h2>
       <div class="header-right">
         <a id="howToUseBtn" class="how-to-use-link" href="#">How to use KLD</a>
+        <a id="privacyBtn" class="how-to-use-link" href="#">Privacy</a>
+        <a id="termsBtn" class="how-to-use-link" href="#">Terms</a>
         <div id="statusIcon" class="status-icon active">●</div>
       </div>
     </div>
 
     <div class="instructions">
       <p>📝 <strong>Focus on any text field</strong> and use the buttons below:</p>
+      <p>🔒 Shortcut fixes run locally in your page. Nothing is sent online unless you submit feedback/report.</p>
     </div>
 
     <button id="fixCurrentWord" class="action-btn primary">
@@ -81,7 +84,18 @@
         </div>
         <textarea id="feedbackText" class="feedback-textarea"
           placeholder="Write a short message (1-2 lines is enough)..."></textarea>
-        <div class="feedback-meta-note">Context is auto-added: page, website, extension version, language, and time.</div>
+        <label class="feedback-option">
+          <input id="feedbackConsent" type="checkbox" checked>
+          <span>I agree to send feedback data for debugging and product improvement.</span>
+        </label>
+        <div class="feedback-meta-note">Privacy-first by design: normal correction stays on your device only. Feedback
+          sends only what you type plus minimal context (host, language, OS, version, time) to improve dictionary
+          accuracy and fix reported bugs. No page input text,
+          passwords, or cookies are collected.
+        </div>
+        <div id="feedbackGateNote" class="feedback-gate-note" hidden>
+          Extension is locked until Terms are accepted. Open Terms and accept to continue.
+        </div>
         <button id="feedbackSubmit" class="feedback-send-btn">✉️ Send</button>
         <div id="feedbackSuccess" class="feedback-success">✅ Report received successfully!</div>
       </div>

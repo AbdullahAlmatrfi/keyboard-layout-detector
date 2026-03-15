@@ -1,195 +1,161 @@
-﻿# ⌨️ Keyboard Layout Detector — v4.0
+﻿# Keyboard Layout Detector
 
-A Chrome extension that automatically detects and fixes **Arabic ↔ English keyboard layout mistakes** in any input field or content-editable area on any website.
+> Instantly fix Arabic ↔ English keyboard layout mistakes in any text field — on any website.
 
----
-
-## 🌟 What It Does
-
-When you accidentally type Arabic text while your keyboard is in English mode (or vice versa), this extension instantly detects the mistake and corrects it with a single shortcut — no copy-paste, no manual retyping.
-
-**Example:**
-- You type `اسممخ` but meant `hello` → press **Ctrl+Alt** → instantly corrected ✅
-- You type `hsgdh` but meant `اهلا` → same shortcut → fixed in milliseconds ✅
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](manifest.json)
+[![Version](https://img.shields.io/badge/version-4.3-orange.svg)](CHANGELOG.md)
 
 ---
 
-## ⚡ Keyboard Shortcuts
+## Overview
+
+Keyboard Layout Detector is a Chrome extension that detects when text was typed in the wrong keyboard language and corrects it with a single shortcut.
+
+**Example — typed in the wrong layout:**
+
+| You typed | You meant | After Ctrl+Alt |
+|-----------|-----------|----------------|
+| `hgHv hg;kdr` | `الحب الكثير` | ✅ Fixed |
+| `لاخ هشته فاخق` | `you write your` | ✅ Fixed |
+| `now i am hpf` | `now i am love` | ✅ Partial fix — correct words untouched |
+
+If a word cannot be reliably converted (no dictionary match), it is flagged with an orange box so you can review and report it, rather than silently producing wrong text.
+
+---
+
+## Features
+
+- **Bidirectional** — Arabic typed in English layout, and English typed in Arabic layout
+- **Smart detection** — only converts words that are genuinely wrong; correct words in a mixed sentence are left untouched
+- **Dictionary-backed** — built-in Arabic and English dictionaries prevent false conversions
+- **Visual scan** — animated sweep shows which words will be changed before applying anything
+- **Unknown word flagging** — orange highlight + floating label for words with no valid conversion
+- **Report system** — submit corrections directly from the flag label to improve the dictionary
+- **One-tap undo** — Ctrl+Z restores the original text at any time after a correction
+---
+
+## Keyboard Shortcuts
 
 | Shortcut | Action |
 |---|---|
-| **Ctrl + Alt** | Auto-fix all wrong words in the active field |
-| **Ctrl + Q** | Fix only the current word at the cursor position |
-| **Ctrl + Shift + Q** | Force-fix every word (bypasses dictionary — converts everything) |
-| **Ctrl + Z** | Undo the last correction and restore original text |
+| `Ctrl + Alt` | Auto-fix all wrong words in the focused field |
+| `Ctrl + Q` | Fix only the word at the current cursor position |
+| `Ctrl + Shift + Q` | **Universal convert** — converts every word regardless of language or dictionary |
+| `Ctrl + Z` | Undo the last correction and restore original text |
+
+> **`Ctrl + Shift + Q` — what it does exactly:**
+> The standard `Ctrl+Alt` scan only converts words it can verify against the built-in Arabic and English dictionaries — words in other languages are skipped to avoid false results. `Ctrl + Shift + Q` removes that filter entirely: it applies the keyboard layout remapping to **every word** in the field, no dictionary check, no language detection. This is designed for users in countries where a third language is involved — for example, someone writing in Farsi, Urdu, or any other language that shares the Arabic script but isn't yet in the dictionary. As the extension expands its language support, this shortcut remains the guaranteed fallback that always works regardless of which language pair is active.
 
 ---
 
-## 🔍 Smart Scan — Visual Feedback System
+## How It Works
 
-Pressing **Ctrl+Alt** triggers a **4-phase progressive scan** with rich visual feedback:
+Pressing `Ctrl+Alt` triggers a four-phase progressive scan:
 
-### Phase 1 — Scanning
-A sweep animation plays across the input field to signal detection is running.
+**Phase 1 — Scan animation**
+A sweep plays across the input to signal the scan is running.
 
-### Phase 2 — Analysis
-The text is analyzed word by word against the built-in dictionary.
+**Phase 2 — Analysis**
+Each word is tested against both dictionaries. Words that map to a valid word in the opposite language are queued for conversion. Words whose conversion result is not in any dictionary are flagged as "stuck."
 
-### Phase 3 — Highlights
-- 🔴 **Red box** — words that were typed in the wrong layout and will be corrected
-- 🟠 **Orange box** — words that appear to be wrong-layout but are **not found in the dictionary** (stuck words)
+**Phase 3 — Highlights**
+- 🔴 Red box — words that will be auto-converted
+- 🟠 Orange box — words that could not be matched to any dictionary entry
 
-### Phase 4 — Label for Stuck Words (890 ms)
-If any stuck words exist, a floating label appears above (or below, near the top of the screen) the orange box:
-
-```
-⚠ not in dictionary
-click to add 👆
-```
-
-- **Glassmorphism style**: warm amber → deep-orange gradient with `backdrop-filter` blur
-- **Hover to keep**: hovering the label (or the orange box) pauses auto-dismiss
-- **Auto-fades** after 3 seconds if not interacted with
-- **Click to report**: opens the Report Panel directly
+**Phase 4 — Correction**
+Convertible words are replaced in the text. A toast notification previews the conversions (up to 5 per line; tap `+N more` to expand). Stuck words receive a floating label — hover to keep it, click to open the report panel.
 
 ---
 
-## 📋 Report Panel — "Not in Dictionary" Flow
+## Installation
 
-When you click the label, a floating panel appears anchored to the input:
+### From the Chrome Web Store
+*(Link will appear here once published)*
 
-- **Single stuck word** → text input: "Should be: ______"
-- **Multiple stuck words** → dropdown selector; each word's correction is stored separately
-- **Submit** → sends all filled corrections to our dictionary improvement form
-- Shows `✅ N words reported!` on success
+### Developer Mode (manual install)
 
----
-
-## 💬 Feedback
-
-The popup includes a **"💬 Send feedback"** button that opens a Google Form pre-filled with your feedback. No data is collected automatically — only what you voluntarily type and submit.
-
----
-
-## ↩️ Undo System
-
-Every correction is saved in a per-session stack:
-
-| Action | Undo |
-|---|---|
-| Ctrl+Q — single word | Ctrl+Z restores original |
-| Ctrl+Alt — auto-fix all | Ctrl+Z restores original |
-| Ctrl+Shift+Q — force fix | Ctrl+Z restores original |
-| Multiple fixes | Ctrl+Z multiple times (LIFO order) |
-
----
-
-## 📖 Dictionary System
-
-Two built-in JSON dictionaries power the detection:
-
-| File | Language Set |
-|---|---|
-| `dict-en.json` | English words |
-| `dict-ar.json` | Arabic words |
-
-Words found in the dictionary are considered valid and will not be flagged. Unknown words trigger the orange "stuck" box and allow you to report them for future dictionary additions.
-
----
-
-## 🔢 Number Handling
-
-Numbers are never keyboard layout mistakes:
-
-| Scenario | Behavior |
-|---|---|
-| `123` with Ctrl+Alt | Unchanged — numbers are skipped |
-| `test123` with Ctrl+Alt | Letters convert, `123` stays |
-| `0551234567` (phone) | Stays unchanged |
-| `123` with Ctrl+Q (manual) | Converts to `۱۲۳` — manual always available |
-
----
-
-## 🌐 Supported Input Fields
-
-Works on any website with these input types:
-
-| Type | Supported |
-|---|---|
-| `<input type="text">` | ✅ |
-| `<input type="search">` | ✅ |
-| `<input type="email">` | ✅ |
-| `<input type="tel">` | ✅ |
-| `<input type="url">` | ✅ |
-| `<textarea>` | ✅ |
-| `contentEditable` elements | ✅ |
-| Password fields | ✅ (if enabled) |
-| Browser address bar | ❌ (browser security restriction) |
-
-> Works across **all frames** on the page (`all_frames: true`), including embedded iframes (e.g. Google Docs, Twitter compose).
-
----
-
-## 🛠 Installation (Developer Mode)
-
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable **Developer mode** (top-right toggle)
+1. Clone or download this repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable **Developer mode** (toggle in the top-right corner)
 4. Click **Load unpacked** and select the extension folder
 5. The extension is now active on all websites
 
+> Also compatible with Brave, Edge, and any Chromium-based browser.
+
 ---
 
-## 📁 File Structure
+## Supported Input Types
+
+| Element | Supported |
+|---|---|
+| `<input type="text / search / email / tel / url">` | ✅ |
+| `<textarea>` | ✅ |
+| `contenteditable` elements | ✅ |
+| Embedded iframes (Google Docs, Twitter, etc.) | ✅ |
+| Browser address bar | ❌ Browser security restriction |
+
+---
+
+## Number Handling
+
+Numbers are never treated as layout mistakes.
+
+| Input | Ctrl+Alt result |
+|---|---|
+| `123` | Unchanged |
+| `test123` | Letters convert, digits stay |
+| `0551234567` | Unchanged |
+
+Ctrl+Q (manual mode) can still convert digits to Arabic-Indic numerals if needed.
+
+---
+
+## File Structure
 
 ```
 keyboard-layout-detector/
 ├── manifest.json        # Chrome MV3 manifest
 ├── content.js           # Core logic: detection, highlighting, correction, scan
 ├── fa-layout.js         # Arabic ↔ English keyboard layout mapping table
-├── styles.css           # All injected UI styles (highlights, labels, panels, toast)
-├── popup.html           # Extension popup UI
-├── popup.js             # Popup logic (status display, feedback button)
+├── styles.css           # All injected UI styles
+├── popup.html           # Extension popup
+├── popup.js             # Popup logic
 ├── popup.css            # Popup styles
-├── dict-en.json         # English dictionary (Set)
-├── dict-ar.json         # Arabic dictionary (Set)
-├── icon16.png           # Extension icons
-├── icon48.png
-└── icon128.png
+├── dict-en.json         # English dictionary
+├── dict-ar.json         # Arabic dictionary
+└── test.html            # Interactive demo page
 ```
 
 ---
 
-## 🆕 What's New in v4.0
+## Contributing
 
-### Smart Scan Visual Overhaul
-- Merged all stuck words into a **single unified orange bounding box** (no more overlapping boxes)
-- Removed distracting green highlights — scan now only shows red (wrong) + orange (stuck)
-- Smooth `ease-out` transitions replacing old bouncy cubic-bezier curves
+Contributions are welcome — bug reports, dictionary additions, and pull requests alike.
 
-### "Not in Dictionary" Label
-- Two-line floating label: `⚠ not in dictionary` + `click to add 👆`
-- **Glassmorphism design**: amber-to-orange gradient + `backdrop-filter` blur + gold rim border + inset glass shine
-- **Smart flip positioning**: appears above the orange box by default; flips below automatically when near the top of the screen (e.g. YouTube/Google search bars)
-- **Hover persistence**: hovering pauses auto-dismiss for both the label and the orange box together
-- **3-second auto-fade** with smooth opacity transition
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add your feature'`
+4. Push the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
 
-### Per-Word Report Panel
-- Dropdown selector when multiple stuck words exist
-- Each correction stored individually in a `corrections` map
-- Submit sends all corrections at once with a single confirmation
-
-### Popup Simplified
-- Removed word-input / auto-fill fields from popup
-- Replaced with a single **"💬 Send feedback"** button linking to Google Form
-
-### UX Polish
-- Toast dismissed automatically when report panel opens
-- All highlight boxes use consistent 4px padding
-- Maximum `z-index` (`2147483647`) on all floating elements to prevent hiding behind site headers
+To report a missing or incorrect dictionary word, use the in-extension report panel (click any orange box after a scan).
 
 ---
 
-## 📄 License
+## Changelog
 
-MIT — free to use, fork, and improve.
+See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
+---
+
+## Author
+
+**Abdullah Mohammad Almatrfi** — [github.com/AbdullahAlmatrfi](https://github.com/AbdullahAlmatrfi)
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+

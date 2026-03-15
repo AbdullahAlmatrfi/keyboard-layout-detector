@@ -1,0 +1,166 @@
+{
+    "nav": {
+        "how": "How It Works",
+        "shortcuts": "Shortcuts",
+        "popup": "Popup",
+        "try": "Try It",
+        "install": "Install Extension"
+    },
+    "lang": {
+        "toAr": "العربية",
+        "toEn": "English",
+        "ariaToAr": "Switch language to Arabic",
+        "ariaToEn": "Switch language to English"
+    },
+    "banner": {
+        "top": "<strong>Note:</strong> this page is a demo. For real shortcut testing, go to any <strong>www.</strong> website (for example <strong>www.google.com</strong>) and try it in a normal text field."
+    },
+    "hero": {
+        "badge": "⌨️ Chrome Extension · Arabic ↔ English",
+        "title": "Typed in the wrong<br>keyboard layout?",
+        "sub": "One shortcut detects and fixes layout mistakes in any text field on any website — instantly.",
+        "install": "⬇ Install on Chrome",
+        "demo": "▶ Try the Demo",
+        "shortcut": "Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> in any text field to fix"
+    },
+    "how": {
+        "label": "How It Works",
+        "title": "Four phases, under a second",
+        "sub": "Every Ctrl+Alt triggers a four-phase progressive scan with real-time visual feedback.",
+        "p1": {
+            "h": "Scan",
+            "p": "A sweep animation plays across the input field — signals the scan is running."
+        },
+        "p2": {
+            "h": "Analyse",
+            "p": "Each word is tested against both Arabic and English dictionaries to find layout mismatches."
+        },
+        "p3": {
+            "h": "Highlight",
+            "p": "🔴 Red box = will be converted. 🟠 Orange box = no dictionary match found."
+        },
+        "p4": {
+            "h": "Correct",
+            "p": "Words are replaced in the text. A toast previews all conversions. Undo button appears."
+        }
+    },
+    "problem": {
+        "label": "The Problem",
+        "title": "We've all been there",
+        "sub": "You switch tabs, forget to change the keyboard layout, and start typing. By the time you notice, you've written a whole sentence in the wrong language.",
+        "c1": {
+            "tag": "Arabic intended → typed in English layout"
+        },
+        "c2": {
+            "tag": "English intended → typed in Arabic layout"
+        },
+        "c3": {
+            "tag": "Mixed sentence — only wrong words fixed"
+        },
+        "c4": {
+            "tag": "Clean text — nothing changes"
+        }
+    },
+    "shortcuts": {
+        "label": "Keyboard Shortcuts",
+        "title": "Four shortcuts, every scenario covered",
+        "ctrlAlt": {
+            "h": "Auto-fix all wrong words",
+            "p": "The main shortcut. Scans the entire focused field, highlights all words typed in the wrong layout, and converts them in one go. Only words that match a dictionary entry are converted — correct words in a mixed sentence are untouched.",
+            "label": "Try it — click inside, press Ctrl+Alt",
+            "btn": "▶ Try it — Ctrl+Alt works here too",
+            "hint": "Expected: my name is Abdullah"
+        },
+        "ctrlQ": {
+            "h": "Fix the word at the cursor",
+            "p": "Place your cursor inside a single wrong word and press Ctrl+Q. Only that one word is converted — the rest of the text is ignored. Useful when you spot one mistake mid-sentence without wanting to re-scan everything.",
+            "label": "Click inside a wrong word, then press Ctrl+Q",
+            "btn": "▶ Try it — demo converts the whole field",
+            "hint": "Place cursor inside \"ثءؤهفثي \" → Ctrl+Q → becomes \"excited\""
+        },
+        "ctrlShiftQ": {
+            "h": "Universal convert — no language filter",
+            "p": "Converts every word in the field regardless of dictionary results or language detection. Designed for users writing in languages beyond Arabic and English — Farsi, Urdu, or any other language that shares the Arabic script but is not yet in the dictionary. As the extension expands its language support, this shortcut remains the guaranteed fallback.",
+            "label": "Try it — forces conversion of everything",
+            "btn": "▶ Try it — converts everything, no dictionary",
+            "hint": "No dictionary check — every word remapped",
+            "why": "Why this exists:",
+            "explain1": "only converts words it can verify in the dictionary — this protects intentional bilingual text",
+            "explain2": "removes that filter entirely, making it the universal tool for any script-based layout swap."
+        },
+        "ctrlZ": {
+            "h": "Undo the last correction",
+            "p": "Every correction is saved in a per-session stack. Press Ctrl+Z immediately after any correction to restore the original text exactly as it was. Works for all three correction methods. Press multiple times to undo multiple corrections in reverse order.",
+            "label": "Step 1: Fix it → Step 2: Ctrl+Z to undo",
+            "btn": "▶ Step 1: Fix it — then press Ctrl+Z to undo",
+            "hint": "Ctrl+Alt fixes it → Ctrl+Z restores the original"
+        }
+    },
+    "playground": {
+        "label": "Live Playground",
+        "title": "Every scenario, try it yourself",
+        "sub": "The extension must be installed and active. Click inside any field below, then press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>.",
+        "noteTitle": "Important: this page is a safe demo environment",
+        "note1": "Real auto-correction from the extension content script does not run on this page because it is loaded as <code>chrome-extension://...</code>. Chrome isolates extension pages for security, so content scripts are designed to run on regular websites instead.",
+        "note2": "The <strong>Fix it</strong> buttons below simulate the same behavior for learning purposes. To use the real shortcuts on live text fields, open any normal website and press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>, <kbd>Ctrl</kbd>+<kbd>Q</kbd>, or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd>. Go to any <strong>www.</strong> website (for example, <strong>www.google.com</strong>) and try it live there."
+    },
+    "indicators": {
+        "label": "Visual Feedback",
+        "title": "Everything you see, explained",
+        "sub": "The extension communicates through four distinct visual elements. Here's what each one means.",
+        "red": {
+            "badge": "🔴 Red Box",
+            "h": "Word will be converted",
+            "p": "Appears around words the extension has identified as wrong-layout and is about to convert. Flashes briefly before disappearing as the correction is applied."
+        },
+        "orange": {
+            "badge": "🟠 Orange Box",
+            "h": "No dictionary match",
+            "p": "The word looks like a layout mistake but its converted form isn't in any dictionary. The extension won't guess — it flags it instead. Click the label above it to report the correct form."
+        },
+        "purple": {
+            "badge": "💬 Toast",
+            "h": "Conversion preview",
+            "p": "Shows a preview of all conversions: <code style=\"background:#1e293b;padding:1px 6px;border-radius:4px;font-size:11px;\">→ word · → word</code>. Tap \"+N more\" to expand if there are more than 5 words. Disappears on scroll or after 2.5 seconds."
+        },
+        "green": {
+            "badge": "↩ Undo Button",
+            "h": "Quick undo access",
+            "p": "Appears in the corner after every successful correction. Click it or press Ctrl+Z to instantly restore the original text. Disappears after a few seconds if not used."
+        }
+    },
+    "report": {
+        "label": "Unknown Words",
+        "title": "Flag, report, improve",
+        "sub": "When a word can't be matched to any dictionary entry, the extension flags it instead of guessing. You can report the correct form to help improve the dictionary for everyone.",
+        "s1": {
+            "h": "Orange box appears",
+            "p": "The word stays in the text unchanged. An orange border surrounds it so you can see exactly which word was flagged."
+        },
+        "s2": {
+            "h": "Floating label shows",
+            "p": "\"⚠ not in dictionary — click to add 👆\" appears above the box. Hover it to keep it visible. It auto-fades after 3 seconds."
+        },
+        "s3": {
+            "h": "Click to open report panel",
+            "p": "A panel appears anchored to the field. Type what the word should have been and submit — your correction goes directly into the dictionary improvement queue."
+        }
+    },
+    "popup": {
+        "label": "Extension Popup",
+        "title": "Quick access from the toolbar",
+        "sub": "Click the extension icon in your Chrome toolbar to open the popup. It gives you a status overview and a direct feedback channel.",
+        "f1": {
+            "h": "Status display",
+            "p": "Shows whether the extension is active on the current page."
+        },
+        "f2": {
+            "h": "Send feedback",
+            "p": "Opens a form to send suggestions, bug reports, or missing word requests directly to the developer."
+        },
+        "f3": {
+            "h": "Shortcut reference",
+            "p": "All four shortcuts listed at a glance — no need to remember them all."
+        }
+    }
+}

@@ -340,6 +340,40 @@ h2 {
   line-height: 1.4;
 }
 
+.feedback-option {
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.76em;
+  color: #334155;
+  line-height: 1.35;
+}
+
+.feedback-option.optional {
+  color: #475569;
+}
+
+.feedback-option input {
+  margin-top: 1px;
+  accent-color: #0891b2;
+}
+
+.feedback-option.error {
+  color: #b91c1c;
+}
+
+.feedback-gate-note {
+  margin-top: 8px;
+  font-size: 0.76em;
+  line-height: 1.4;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
 .feedback-send-btn:hover {
   background: linear-gradient(135deg, #0891b2, #0e7490);
   transform: translateY(-1px);

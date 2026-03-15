@@ -1,5 +1,8 @@
 class ModernLayoutDetector {
   constructor() {
+    this.consentVersion = '2026-03-15-v1';
+    this.termsAccepted = false;
+    this._termsToastAt = 0;
     this.undoButton = null;
     this.currentElement = null;
     this.currentWordData = null;
@@ -9,6 +12,8 @@ class ModernLayoutDetector {
     this.toastEl = null;        // single persistent toast element
     this._toastHideTimer = null;
     this._toastClickHandler = null;
+    this._scrollDismissHandler = null;
+    this._scrollDismissTargets = null;
 
     // Dictionary sets for word validation (L14)
     this.dictEn = null; // Set of common English words
@@ -35,10 +40,15 @@ class ModernLayoutDetector {
           this.pauseExtension = !!data.pauseExtension;
         });
 
+        this.refreshTermsStatus();
+
         // Listen for storage changes
         chrome.storage.onChanged.addListener((changes, area) => {
           if (area === 'sync' && changes.pauseExtension) {
             this.pauseExtension = changes.pauseExtension.newValue;
+          }
+          if (area === 'local' && (changes.kldConsentStatus || changes.kldConsentVersion)) {
+            this.refreshTermsStatus();
           }
         });
       }
@@ -46,6 +56,11 @@ class ModernLayoutDetector {
       // Listen for messages from popup (guarded for restricted pages)
       if (chrome.runtime && chrome.runtime.onMessage) {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+          if (!this.termsAccepted) {
+            sendResponse({ success: false, message: 'Accept Terms of Use to activate extension.' });
+            return;
+          }
+
           if (this.pauseExtension) {
             sendResponse({ success: false, message: 'Extension is paused' });
             return;
@@ -86,6 +101,20 @@ class ModernLayoutDetector {
       console.log('🚀 Modern Layout Detector loaded!');
     } catch (e) {
       console.warn('⚠️ Layout Detector: init failed (likely a restricted page):', e.message);
+    }
+  }
+
+  refreshTermsStatus() {
+    try {
+      if (!chrome.storage || !chrome.storage.local) {
+        this.termsAccepted = false;
+        return;
+      }
+      chrome.storage.local.get(['kldConsentStatus', 'kldConsentVersion'], (data) => {
+        this.termsAccepted = !!(data && data.kldConsentStatus === 'accepted' && data.kldConsentVersion === this.consentVersion);
+      });
+    } catch (_) {
+      this.termsAccepted = false;
     }
   }
 
@@ -167,7 +196,7 @@ class ModernLayoutDetector {
       this.undoLastCorrection();
     });
 
-    document.body.appendChild(this.undoButton);
+    (document.body || document.documentElement).appendChild(this.undoButton);
   }
 
   showNotification(message, type = 'info', onClick = null) {
@@ -176,7 +205,7 @@ class ModernLayoutDetector {
       this.toastEl = document.createElement('div');
       this.toastEl.className = 'auto-correct-notification';
       this.toastEl.style.opacity = '0';
-      document.body.appendChild(this.toastEl);
+      (document.body || document.documentElement).appendChild(this.toastEl);
     }
 
     // Cancel any pending hide timer so previous message doesn't cut this one short
@@ -301,7 +330,7 @@ class ModernLayoutDetector {
   // Create orange highlight boxes for stuck words (not in dictionary)
   createStuckWordHighlights(element, stuckWords) {
     if (!stuckWords.length) return null;
-    const PAD = 4;
+    const PAD = 2; // tight — mirror div already gives pixel-perfect size
     const text = element.value || element.textContent || '';
     if (!text) return null;
 
@@ -313,35 +342,51 @@ class ModernLayoutDetector {
     for (const token of tokens) {
       const trimmed = token.trim();
       if (originals.includes(trimmed)) {
-        positions.push(this.getPreciseWordPosition(element, position, position + token.length));
+        const pos = this.getPreciseWordPosition(element, position, position + token.length);
+        if (pos.width > 0) positions.push(pos);
       }
       position += token.length;
     }
     if (!positions.length) return null;
 
-    // Merge into one bounding box covering all stuck words
-    const minX = Math.min(...positions.map(p => p.x));
-    const minY = Math.min(...positions.map(p => p.y));
-    const maxX = Math.max(...positions.map(p => p.x + p.width));
-    const maxY = Math.max(...positions.map(p => p.y + p.height));
-
-    const h = document.createElement('div');
-    h.className = 'stuck-word-highlight';
-    h.style.left = (minX - PAD) + 'px';
-    h.style.top = (minY - PAD) + 'px';
-    h.style.width = (maxX - minX + PAD * 2) + 'px';
-    h.style.height = (maxY - minY + PAD * 2) + 'px';
-    document.body.appendChild(h);
-    requestAnimationFrame(() => {
-      h.style.transition = 'all 0.35s ease-out';
-      h.style.opacity = '1';
-      h.style.transform = 'scale(1)';
+    // One precise box per word — no merged blob
+    const allBoxes = positions.map(pos => {
+      const h = document.createElement('div');
+      h.className = 'stuck-word-highlight';
+      h.style.left = (pos.x - PAD) + 'px';
+      h.style.top = (pos.y - PAD) + 'px';
+      h.style.width = (pos.width + PAD * 2) + 'px';
+      h.style.height = (pos.height + PAD * 2) + 'px';
+      (document.body || document.documentElement).appendChild(h);
+      requestAnimationFrame(() => {
+        h.style.transition = 'all 0.35s ease-out';
+        h.style.opacity = '1';
+        h.style.transform = 'scale(1)';
+      });
+      return h;
     });
-    return h;
+    // Attach the full group to the first box so callers can address all at once
+    allBoxes[0]._allBoxes = allBoxes;
+    return allBoxes[0];
   }
 
   // Create clickable "not in dictionary" label floating above stuck word(s)
   createNotInDictLabel(words, highlightEl, element, orangeBox = null) {
+    // Operate on a single box or the whole per-word group
+    const fadeBoxGroup = (box, transition, opacity, removeDelay) => {
+      const boxes = (box && box._allBoxes) ? box._allBoxes : (box ? [box] : []);
+      boxes.forEach(b => {
+        if (!b || !b.parentNode) return;
+        b.style.transition = transition;
+        b.style.opacity = opacity;
+        if (removeDelay != null) setTimeout(() => { if (b.parentNode) b.parentNode.removeChild(b); }, removeDelay);
+      });
+    };
+    const showBoxGroup = (box) => {
+      const boxes = (box && box._allBoxes) ? box._allBoxes : (box ? [box] : []);
+      boxes.forEach(b => { b.style.transition = 'none'; b.style.opacity = '1'; });
+    };
+
     const label = document.createElement('div');
     label.className = 'kld-not-in-dict-label';
     const displayWords = words.map(w => (typeof w === 'object' ? w.original : w));
@@ -369,18 +414,14 @@ class ModernLayoutDetector {
       : (hTop - LABEL_HEIGHT - MARGIN) + 'px';
     label.style.opacity = '0';
     label.style.transform = 'translateY(4px) scale(0.9)';
-    document.body.appendChild(label);
+    (document.body || document.documentElement).appendChild(label);
 
     label.addEventListener('click', (e) => {
       e.stopPropagation();
       clearTimeout(fadeTimer);
       if (label.parentNode) label.parentNode.removeChild(label);
-      // Fade orange box out on click too
-      if (orangeBox && orangeBox.parentNode) {
-        orangeBox.style.transition = 'opacity 0.25s ease';
-        orangeBox.style.opacity = '0';
-        setTimeout(() => { if (orangeBox.parentNode) orangeBox.parentNode.removeChild(orangeBox); }, 270);
-      }
+      // Fade orange box(es) out on click too
+      fadeBoxGroup(orangeBox, 'opacity 0.25s ease', '0', 270);
       this.showReportPanel(words, element);
     });
 
@@ -398,12 +439,8 @@ class ModernLayoutDetector {
       label.style.transition = 'opacity 0.3s ease';
       label.style.opacity = '0';
       setTimeout(() => { if (label.parentNode) label.parentNode.removeChild(label); }, 320);
-      // Fade orange box at the same time
-      if (orangeBox && orangeBox.parentNode) {
-        orangeBox.style.transition = 'opacity 0.3s ease';
-        orangeBox.style.opacity = '0';
-        setTimeout(() => { if (orangeBox.parentNode) orangeBox.parentNode.removeChild(orangeBox); }, 320);
-      }
+      // Fade orange box(es) at the same time
+      fadeBoxGroup(orangeBox, 'opacity 0.3s ease', '0', 320);
     };
 
     const startFade = (delay) => {
@@ -413,11 +450,8 @@ class ModernLayoutDetector {
 
     label.addEventListener('mouseenter', () => {
       clearTimeout(fadeTimer);
-      // Keep orange box visible while hovering label
-      if (orangeBox) {
-        orangeBox.style.transition = 'none';
-        orangeBox.style.opacity = '1';
-      }
+      // Keep orange box(es) visible while hovering label
+      if (orangeBox) showBoxGroup(orangeBox);
     });
 
     label.addEventListener('mouseleave', () => {
@@ -442,9 +476,9 @@ class ModernLayoutDetector {
       if (!w || w.length < 2) continue;
       if (/^\d+$/.test(w)) continue;
       if (this.shouldSkipWord(w)) continue;
-      if (this.isRealWord(w)) continue;          // already a valid word
       const converted = this.convertText(w);
       if (converted === w) continue;              // no conversion mapping at all
+      if (this.isRealWord(w)) continue;          // already a valid word
       if (this.isRealWord(converted)) continue;  // was successfully converted
       if (seen.has(w)) continue;
       seen.add(w);
@@ -584,7 +618,7 @@ class ModernLayoutDetector {
     panel.appendChild(correctInput);
     panel.appendChild(hint);
     panel.appendChild(submitBtn);
-    document.body.appendChild(panel);
+    (document.body || document.documentElement).appendChild(panel);
 
     // Always position top-right, right under the browser toolbar / extension icon
     panel.style.top = '52px';
@@ -604,6 +638,15 @@ class ModernLayoutDetector {
   }
 
   async submitReport(wrongWord, correctWord, panel) {
+    const canSend = await this.canSendExternalReports();
+    if (!canSend) {
+      if (panel) panel.remove();
+      this.showNotification('🔒 Local-only mode: accept Terms of Use to send reports.', 'warning', () => {
+        window.open(chrome.runtime.getURL('consent.html'), '_blank');
+      });
+      return;
+    }
+
     const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdkButKdnqvsIuW0e02t2vb32AAipIpwBI2OFIl6VNe9C7fvw/formResponse';
     const value = `${wrongWord} → ${correctWord}`;
     try {
@@ -623,6 +666,24 @@ class ModernLayoutDetector {
       if (panel) panel.remove();
       this.showNotification('✅ Opening report form…', 'info');
     }
+  }
+
+  canSendExternalReports() {
+    return new Promise((resolve) => {
+      try {
+        if (!chrome.storage || !chrome.storage.local) {
+          resolve(false);
+          return;
+        }
+
+        chrome.storage.local.get(['kldConsentStatus', 'kldConsentVersion'], (data) => {
+          const accepted = data && data.kldConsentStatus === 'accepted' && data.kldConsentVersion === this.consentVersion;
+          resolve(!!accepted);
+        });
+      } catch (_) {
+        resolve(false);
+      }
+    });
   }
 
   // ─── DICTIONARY & VALIDATION ───────────────────────────────────────
@@ -714,14 +775,44 @@ class ModernLayoutDetector {
 
   // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────────
 
+  rememberShortcut(name) {
+    try {
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({
+          kldLastShortcut: name,
+          kldLastShortcutAt: new Date().toISOString()
+        });
+      }
+    } catch (_) {
+      // ignore storage issues on restricted pages
+    }
+  }
+
   handleKeydown(event) {
+    if (!this.termsAccepted) {
+      const isPotentialShortcut = (event.ctrlKey || event.metaKey) && (event.code === 'KeyQ' || event.code === 'KeyZ' || event.altKey || event.shiftKey);
+      if (isPotentialShortcut) {
+        event.preventDefault();
+        const now = Date.now();
+        if (now - this._termsToastAt > 2500) {
+          this._termsToastAt = now;
+          this.showNotification('🔒 Accept Terms of Use to activate keyboard shortcuts.', 'warning', () => {
+            window.open(chrome.runtime.getURL('consent.html'), '_blank');
+          });
+        }
+      }
+      return;
+    }
+
     if (this.pauseExtension) return;
+    const isQKey = event.code === 'KeyQ' || event.key === 'q' || event.key === 'Q';
 
     // Ctrl+Z for undo — only intercept if focused on the corrected element
     // event.code used (not event.key) so shortcuts fire regardless of OS keyboard language (Arabic/English)
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ' && !event.shiftKey) {
       const lastEntry = this.undoHistory[this.undoHistory.length - 1];
       if (lastEntry && document.activeElement === lastEntry.element) {
+        this.rememberShortcut('Ctrl+Z');
         event.preventDefault();
         this.undoLastCorrection();
       }
@@ -732,6 +823,7 @@ class ModernLayoutDetector {
     if (event.ctrlKey && event.altKey && !event.shiftKey && !event.metaKey) {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
+        this.rememberShortcut('Ctrl+Alt');
         event.preventDefault();
         this.startEpicProgressiveHighlighting(element);
       }
@@ -739,9 +831,10 @@ class ModernLayoutDetector {
     }
 
     // Ctrl+Shift+Q for Force Fix All Words (bypass dictionary)
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === 'KeyQ') {
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && !event.altKey && isQKey) {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
+        this.rememberShortcut('Ctrl+Shift+Q');
         event.preventDefault();
         this.forceFixAllWords(element);
       }
@@ -749,9 +842,10 @@ class ModernLayoutDetector {
     }
 
     // Ctrl+Q for Fix Current Word
-    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.code === 'KeyQ') {
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && isQKey) {
       const element = document.activeElement;
       if (this.isInputElement(element)) {
+        this.rememberShortcut('Ctrl+Q');
         event.preventDefault();
         this.fixCurrentWord((response) => {
           if (!response.success) {
@@ -807,14 +901,20 @@ class ModernLayoutDetector {
       document.body.removeChild(progressBar);
       document.body.removeChild(scanLine);
 
-      // Phase 3: Highlight wrong + stuck simultaneously
-      const stuckHighlight = this.createStuckWordHighlights(element, stuckWordsList);
+      // Phase 3: Highlight convertible words, apply corrections, then measure stuck positions
+      // IMPORTANT: createStuckWordHighlights must come AFTER applyEpicCorrectionsWithAnimation
+      // because converted words change text length/width, shifting the stuck words' positions.
       await this.epicHighlightWrongWords(element, wrongWords);
       await this.delay(200); // A: was 450+240=690ms
 
       if (wrongWords.length > 0) {
         await this.applyEpicCorrectionsWithAnimation(element, wrongWords);
       }
+
+      // Now the text reflects the post-correction state — positions are accurate
+      const stuckHighlight = stuckWordsList.length > 0
+        ? this.createStuckWordHighlights(element, stuckWordsList)
+        : null;
 
       // Phase 4: Show "not in dictionary" label — dismiss success toast at same moment to avoid collision
       if (stuckWordsList.length > 0) {
@@ -831,6 +931,10 @@ class ModernLayoutDetector {
           }
         }, 450);
       }
+
+      // Dismiss-on-scroll: first scroll after scan clears all highlights + toast
+      this._attachScrollDismiss(wrongWords, stuckHighlight);
+
     } catch (e) {
       console.warn('⚠️ Auto-fix failed:', e.message);
       this.showNotification('❌ Something went wrong. Please try again.', 'warning');
@@ -843,7 +947,7 @@ class ModernLayoutDetector {
     const progressBar = document.createElement('div');
     progressBar.className = 'scan-progress';
     progressBar.style.width = '0%';
-    document.body.appendChild(progressBar);
+    (document.body || document.documentElement).appendChild(progressBar);
     return progressBar;
   }
 
@@ -863,7 +967,7 @@ class ModernLayoutDetector {
     scanLine.style.width = '2px';
     scanLine.style.opacity = '0';
 
-    document.body.appendChild(scanLine);
+    (document.body || document.documentElement).appendChild(scanLine);
     return scanLine;
   }
 
@@ -943,7 +1047,7 @@ class ModernLayoutDetector {
       h.style.top = (pos.y - PAD) + 'px';
       h.style.width = (pos.width + PAD * 2) + 'px';
       h.style.height = (pos.height + PAD * 2) + 'px';
-      document.body.appendChild(h);
+      (document.body || document.documentElement).appendChild(h);
       highlights.push(h);
       requestAnimationFrame(() => {
         h.style.transition = 'all 0.35s ease-out';
@@ -1087,7 +1191,7 @@ class ModernLayoutDetector {
       highlight.style.opacity = '0';
       highlight.style.transform = 'scale(0.5)';
 
-      document.body.appendChild(highlight);
+      (document.body || document.documentElement).appendChild(highlight);
 
       wordData.highlightElement = highlight;
       wordData.previewElement = null; // preview is shown via toast
@@ -1098,15 +1202,48 @@ class ModernLayoutDetector {
     } else {
       // Multiple words: one unified highlight box + toast listing all conversions
       const unifiedBox = this.createUnifiedHighlightBox(wrongWords, element);
-      document.body.appendChild(unifiedBox);
+      (document.body || document.documentElement).appendChild(unifiedBox);
 
       wrongWords.forEach(wordData => {
         wordData.highlightElement = unifiedBox;
         wordData.previewElement = null; // preview is shown via toast
       });
 
-      const previews = wrongWords.map(w => w.converted).join(' · ');
-      this.showNotification(`→ ${previews}`, 'info');
+      const converted = wrongWords.map(w => w.converted);
+      const MAX = 5;
+      const rest = converted.length - MAX;
+      // Build full multi-line text: 5 words per line, using → per word
+      const fullLines = [];
+      for (let i = 0; i < converted.length; i += MAX) {
+        fullLines.push(converted.slice(i, i + MAX).map(w => `→ ${w}`).join('  ·  '));
+      }
+      const fullText = fullLines.join('\n');
+      if (rest <= 0) {
+        this.showNotification(fullText, 'info');
+      } else {
+        const previewText = converted.slice(0, MAX).map(w => `→ ${w}`).join('  ·  ')
+          + `  ·  \u202A+${rest} more\u202C`;
+        this.showNotification(previewText, 'info', () => {
+          // Expand in-place: update text only, no reposition, no re-animation
+          clearTimeout(this._toastHideTimer);
+          this._toastHideTimer = null;
+          if (this._toastClickHandler) {
+            this.toastEl.removeEventListener('click', this._toastClickHandler);
+            this._toastClickHandler = null;
+            this.toastEl.style.cursor = '';
+          }
+          this.toastEl.textContent = fullText;
+          this.toastEl.style.pointerEvents = 'none';
+          // Auto-hide after 3s
+          this._toastHideTimer = setTimeout(() => {
+            if (this.toastEl) {
+              this.toastEl.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+              this.toastEl.style.opacity = '0';
+              this.toastEl.style.transform = 'translateX(-50%) translateY(8px)';
+            }
+          }, 3000);
+        });
+      }
       this.animateUnifiedHighlight(unifiedBox);
     }
 
@@ -1116,48 +1253,143 @@ class ModernLayoutDetector {
     await this.delay(wrongWords.length * 60 + 240);
   }
 
-  // Precise word positioning using canvas text measurement
+  // Dismiss all scan highlights + toast + sticky labels on first scroll after a scan
+  _attachScrollDismiss(wrongWords, stuckHighlight) {
+    // Tear down any previous listeners completely
+    this._detachScrollDismiss();
+
+    const dismiss = () => {
+      this._detachScrollDismiss();
+
+      const fadeEl = (el) => {
+        if (!el || !el.parentNode) return;
+        el.style.transition = 'opacity 0.2s ease';
+        el.style.opacity = '0';
+        setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+      };
+
+      // Fade wrong-word highlight boxes
+      const seen = new Set();
+      (wrongWords || []).forEach(w => {
+        if (w.highlightElement && !seen.has(w.highlightElement)) {
+          seen.add(w.highlightElement);
+          fadeEl(w.highlightElement);
+        }
+      });
+
+      // Fade stuck-word orange boxes
+      if (stuckHighlight) {
+        const boxes = stuckHighlight._allBoxes || [stuckHighlight];
+        boxes.forEach(b => fadeEl(b));
+      }
+
+      // Fade any floating "not in dict" labels
+      document.querySelectorAll('.kld-not-in-dict-label').forEach(l => fadeEl(l));
+
+      // Fade the toast
+      if (this.toastEl) {
+        if (this._toastHideTimer) { clearTimeout(this._toastHideTimer); this._toastHideTimer = null; }
+        if (this._toastClickHandler) {
+          this.toastEl.removeEventListener('click', this._toastClickHandler);
+          this._toastClickHandler = null;
+        }
+        this.toastEl.style.transition = 'opacity 0.2s ease';
+        this.toastEl.style.opacity = '0';
+        this.toastEl.style.pointerEvents = 'none';
+      }
+    };
+
+    this._scrollDismissHandler = dismiss;
+
+    // Cover every possible scroll source:
+    // 1. window — viewport scroll (most common)
+    // 2. document — some SPAs scroll document directly
+    // 3. wheel — fires even when the page can't scroll (e.g. overflow:hidden body)
+    // 4. scrollable ancestor of the focused element
+    const opts = { capture: true, passive: true };
+    window.addEventListener('scroll', dismiss, opts);
+    document.addEventListener('scroll', dismiss, opts);
+    window.addEventListener('wheel', dismiss, opts);
+
+    // Walk up from the active element to find any scroll container and listen there too
+    this._scrollDismissTargets = [window, document];
+    let node = document.activeElement && document.activeElement.parentElement;
+    while (node && node !== document.body) {
+      const overflow = getComputedStyle(node).overflow + getComputedStyle(node).overflowY;
+      if (/auto|scroll/.test(overflow)) {
+        node.addEventListener('scroll', dismiss, opts);
+        this._scrollDismissTargets.push(node);
+        break;
+      }
+      node = node.parentElement;
+    }
+  }
+
+  _detachScrollDismiss() {
+    if (!this._scrollDismissHandler) return;
+    const opts = { capture: true, passive: true };
+    const h = this._scrollDismissHandler;
+    window.removeEventListener('scroll', h, opts);
+    document.removeEventListener('scroll', h, opts);
+    window.removeEventListener('wheel', h, opts);
+    (this._scrollDismissTargets || []).forEach(t => {
+      try { t.removeEventListener('scroll', h, opts); } catch (e) { /**/ }
+    });
+    this._scrollDismissHandler = null;
+    this._scrollDismissTargets = null;
+  }
+
+  // Precise word positioning using DOM mirror technique
+  // Creates an invisible replica of the element, wraps the target word in a span,
+  // and reads the browser's own bounding rect — handles RTL, scroll, kerning, ligatures.
   getPreciseWordPosition(element, start, end) {
     const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);
-    const fontSize = parseInt(style.fontSize) || 14;
-    const lineHeight = parseInt(style.lineHeight) || fontSize * 1.2;
-    const paddingLeft = parseInt(style.paddingLeft) || 0;
-    const paddingTop = parseInt(style.paddingTop) || 0;
-    const paddingRight = parseInt(style.paddingRight) || 0;
-
-    // Get text before the word to calculate offset
     const text = element.value || element.textContent || '';
-    const textBefore = text.substring(0, start);
-    const word = text.substring(start, end);
 
-    // Check if text direction is RTL using only the element's CSS direction
-    const isRTL = style.direction === 'rtl';
+    const mirror = document.createElement('div');
+    const cloneProps = [
+      'boxSizing', 'width', 'height',
+      'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+      'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch',
+      'fontSize', 'lineHeight', 'fontFamily',
+      'textAlign', 'textTransform', 'textIndent', 'textDecoration',
+      'letterSpacing', 'wordSpacing',
+      'direction', 'unicodeBidi',
+      'whiteSpace', 'wordBreak', 'overflowWrap', 'tabSize',
+    ];
 
-    // Measure text width using canvas
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    mirror.style.position = 'fixed';
+    mirror.style.top = rect.top + 'px';
+    mirror.style.left = rect.left + 'px';
+    mirror.style.visibility = 'hidden';
+    mirror.style.pointerEvents = 'none';
+    mirror.style.overflow = 'hidden';
+    cloneProps.forEach(p => { try { mirror.style[p] = style[p]; } catch (e) { /**/ } });
 
-    const textBeforeWidth = ctx.measureText(textBefore).width;
-    const wordWidth = ctx.measureText(word).width;
+    const before = document.createTextNode(text.slice(0, start));
+    const span = document.createElement('span');
+    span.textContent = text.slice(start, end);
+    const after = document.createTextNode(text.slice(end));
+    mirror.appendChild(before);
+    mirror.appendChild(span);
+    mirror.appendChild(after);
 
-    let wordX;
-    if (isRTL) {
-      // For RTL, position from right side
-      const totalTextWidth = ctx.measureText(text).width;
-      const elementWidth = rect.width - paddingLeft - paddingRight;
-      wordX = rect.left + paddingLeft + (elementWidth - totalTextWidth) + textBeforeWidth;
-    } else {
-      // For LTR, position from left side
-      wordX = rect.left + paddingLeft + textBeforeWidth;
-    }
+    (document.body || document.documentElement).appendChild(mirror);
+    // Sync scroll so the visible slice of text matches the live element
+    mirror.scrollTop = element.scrollTop || 0;
+    mirror.scrollLeft = element.scrollLeft || 0;
 
+    const s = span.getBoundingClientRect();
+    document.body.removeChild(mirror);
+
+    const lineH = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4;
     return {
-      x: wordX,
-      y: rect.top + paddingTop,
-      width: wordWidth,
-      height: lineHeight
+      x: s.left,
+      y: s.top,
+      width: s.width || 0,
+      height: s.height || lineH,
     };
   }
 

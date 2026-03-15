@@ -9,10 +9,11 @@
     "128": "icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://docs.google.com;"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://docs.google.com;"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
   ],
   "content_scripts": [
     {
@@ -20,6 +21,7 @@
         "<all_urls>"
       ],
       "all_frames": true,
+      "run_at": "document_start",
       "js": [
         "fa-layout.js",
         "content.js"
@@ -29,6 +31,9 @@
       ]
     }
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Keyboard Layout Detector",
@@ -45,7 +50,11 @@
     {
       "resources": [
         "dict-en.json",
-        "dict-ar.json"
+        "dict-ar.json",
+        "index.css",
+        "demo.js",
+        "consent.html",
+        "consent.js"
       ],
       "matches": [
         "<all_urls>"

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLD Privacy and Data Use</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --text: #0f172a;
+            --muted: #475569;
+            --panel: rgba(255, 255, 255, 0.86);
+            --panel-border: rgba(148, 163, 184, 0.24);
+            --brand: #0284c7;
+            --brand-strong: #0369a1;
+            --ok: #065f46;
+            --warn: #9a3412;
+            --shadow: 0 16px 38px rgba(15, 23, 42, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(1200px 620px at -8% -10%, #bfdbfe 0%, rgba(191, 219, 254, 0) 62%),
+                radial-gradient(980px 520px at 108% -6%, #c7d2fe 0%, rgba(199, 210, 254, 0) 58%),
+                linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+            min-height: 100vh;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 34px 20px 34px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+        }
+
+        .lang-btn {
+            border: 1px solid rgba(2, 132, 199, 0.28);
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 12px;
+            padding: 8px 13px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .lang-btn:hover {
+            border-color: var(--brand);
+            color: var(--brand);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(2, 132, 199, 0.15);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(30px, 4vw, 38px);
+            line-height: 1.06;
+            letter-spacing: -0.02em;
+            color: #0b1f36;
+        }
+
+        h2 {
+            margin: 24px 0 8px;
+            font-size: 19px;
+            line-height: 1.25;
+            color: #0f2a46;
+            letter-spacing: 0.01em;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 18px;
+            padding: 16px 18px;
+            box-shadow: var(--shadow);
+            margin-top: 14px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        ul {
+            margin: 8px 0 0 16px;
+            padding: 0;
+            line-height: 1.65;
+        }
+
+        li+li {
+            margin-top: 6px;
+        }
+
+        p {
+            line-height: 1.7;
+            margin: 10px 0;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .ok {
+            color: var(--ok);
+            font-weight: 700;
+        }
+
+        .warn {
+            color: var(--warn);
+            font-weight: 700;
+        }
+
+        .mono {
+            font-family: Consolas, Monaco, 'Courier New', monospace;
+            background: #eef6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 0.9em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 760px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .wrap {
+                padding-top: 22px;
+            }
+
+            .topbar,
+            .card {
+                border-radius: 14px;
+                padding: 14px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 18px;
+                margin-top: 18px;
+            }
+        }
+
+        html[dir="rtl"] body {
+            text-align: right;
+        }
+
+        html[dir="rtl"] ul {
+            margin: 8px 18px 0 0;
+        }
+
+        html[dir="rtl"] .mono {
+            direction: ltr;
+            unicode-bidi: bidi-override;
+            display: inline-block;
+        }
+
+        html[dir="rtl"] .topbar {
+            flex-direction: row-reverse;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="wrap">
+        <div class="topbar">
+            <h1 data-i18n="title">Keyboard Layout Detector Privacy and Data Use</h1>
+            <button id="langToggle" class="lang-btn" type="button">العربية</button>
+        </div>
+        <p class="muted"><span data-i18n="lastUpdated">Last updated:</span> 2026-03-15</p>
+
+        <section class="card">
+            <h2 data-i18n="short.title">Short answer</h2>
+            <ul>
+                <li class="ok" data-i18n="short.localOnly">Using shortcuts (Ctrl+Q, Ctrl+Alt, Ctrl+Shift+Q, Ctrl+Z)
+                    edits text locally in your own page only.</li>
+                <li class="ok" data-i18n="short.noServer">No text is sent to servers during normal fixing.</li>
+                <li class="warn" data-i18n="short.onlySubmit">Data leaves your browser only when you explicitly submit
+                    feedback/report forms to improve dictionary accuracy and fix reported bugs.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="why.title">Why correction and feedback are necessary</h2>
+            <ul>
+                <li data-i18n="why.correction1">Word correction is necessary to instantly recover text typed with the
+                    wrong keyboard layout, so you do not lose time rewriting.</li>
+                <li data-i18n="why.correction2">Dictionary-based scanning is necessary to reduce false conversions and
+                    protect valid words.</li>
+                <li data-i18n="why.feedback1">Feedback is necessary to improve real-world accuracy for slang, names, and
+                    edge cases that dictionaries miss.</li>
+                <li data-i18n="why.feedback2">Feedback also helps fix bugs faster by showing which page context
+                    triggered a problem.</li>
+                <li class="ok" data-i18n="why.reassure">You stay in control: correction is local, and data is sent only
+                    when you choose to submit to improve dictionary accuracy and fix bugs.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="flows.title">Data flows in this project</h2>
+            <div class="grid">
+                <div>
+                    <p><strong data-i18n="flows.fixing.title">1) Keyboard fixing (content script)</strong></p>
+                    <ul>
+                        <li data-i18n="flows.fixing.l1">Runs on-page to detect/convert words in focused inputs.</li>
+                        <li data-i18n="flows.fixing.l2">Uses local dictionary files bundled inside the extension.</li>
+                        <li class="ok" data-i18n="flows.fixing.l3">No network request is made for normal fixes.</li>
+                    </ul>
+                </div>
+                <div>
+                    <p><strong data-i18n="flows.popup.title">2) Popup feedback</strong></p>
+                    <ul>
+                        <li data-i18n-html="flows.popup.l1">Sends only after you click <strong>Send</strong> to improve
+                            dictionary accuracy and fix bugs.</li>
+                        <li data-i18n="flows.popup.l2">Default payload is privacy-safe and minimal.</li>
+                        <li data-i18n="flows.popup.l3">You stay in control: no send happens unless you submit to improve
+                            dictionary accuracy and fix bugs.</li>
+                    </ul>
+                </div>
+                <div>
+                    <p><strong data-i18n="flows.report.title">3) In-page wrong-word report</strong></p>
+                    <ul>
+                        <li data-i18n-html="flows.report.l1">When you report a wrong conversion, the pair <span
+                                class="mono">wrong -&gt; correct</span> is submitted to improve dictionary accuracy and
+                            fix conversion bugs.</li>
+                        <li data-i18n="flows.report.l2">This report is also sent to Google Forms to improve dictionary
+                            quality and fix bugs faster.</li>
+                    </ul>
+                </div>
+                <div>
+                    <p><strong data-i18n="flows.storage.title">4) Local storage</strong></p>
+                    <ul>
+                        <li data-i18n-html="flows.storage.l1">Pause setting: <span
+                                class="mono">chrome.storage.sync.pauseExtension</span></li>
+                        <li data-i18n-html="flows.storage.l2">Last shortcut used: <span
+                                class="mono">chrome.storage.local.kldLastShortcut</span></li>
+                        <li data-i18n-html="flows.storage.l3">Feedback draft text/type: <span
+                                class="mono">localStorage.kld-feedback-draft-v1</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="feedback.title">Exactly what popup feedback can include</h2>
+            <p><strong data-i18n="feedback.minTitle">Always included (minimal mode):</strong></p>
+            <ul>
+                <li data-i18n="feedback.min1">Feedback type and message you typed.</li>
+                <li data-i18n="feedback.min2">Host / page origin.</li>
+                <li data-i18n="feedback.min3">Shortcut used, extension version, browser language, OS, timestamp.</li>
+            </ul>
+            <p class="ok" data-i18n="feedback.reassure">Nothing extra is collected in feedback mode. Minimal mode is
+                always on.</p>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="notCollected.title">What is not collected automatically</h2>
+            <ul>
+                <li class="ok" data-i18n="notCollected.l1">No passwords.</li>
+                <li class="ok" data-i18n="notCollected.l2">No cookies, session tokens, or account secrets.</li>
+                <li class="ok" data-i18n="notCollected.l3">No full form contents from web pages during normal keyboard
+                    fixing.</li>
+                <li class="ok" data-i18n="notCollected.l4">No keystroke logging sent to external servers.</li>
+            </ul>
+            <p class="muted" data-i18n="notCollected.note">Important: if you type sensitive information into the
+                feedback message yourself, that text will be submitted (only after you click Send) to help troubleshoot
+                and fix your reported issue.</p>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="permissions.title">Permissions and why they exist</h2>
+            <ul>
+                <li data-i18n-html="permissions.l1"><span class="mono">storage</span>: save pause setting, shortcut
+                    context, and feedback draft.</li>
+                <li data-i18n-html="permissions.l2"><span class="mono">tabs</span>: read active tab URL/host/title for
+                    optional debugging context.</li>
+                <li data-i18n-html="permissions.l3"><span class="mono">&lt;all_urls&gt;</span> content script:
+                    keyboard-fix feature must run where you type.</li>
+                <li data-i18n-html="permissions.l4"><span class="mono">https://docs.google.com/*</span>: send
+                    feedback/report submissions to improve dictionary accuracy and fix bugs.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="where.title">Where data is sent</h2>
+            <ul>
+                <li data-i18n="where.l1">Feedback and report submissions go to Google Forms endpoints controlled by the
+                    project owner to improve dictionary accuracy and fix bugs.</li>
+                <li data-i18n="where.l2">No other external analytics endpoint is configured in this extension.</li>
+            </ul>
+            <p class="warn" data-i18n="where.warn">Only send information you are comfortable sharing.</p>
+            <p class="ok" data-i18n="where.reassure">You stay in control: if you do not submit, nothing leaves your
+                browser. If you do submit, it is only to improve dictionary accuracy and fix bugs.</p>
+        </section>
+
+        <section class="card">
+            <h2 data-i18n="controls.title">Your controls</h2>
+            <ul>
+                <li data-i18n="controls.l1">Use shortcuts confidently: correction runs on your device only.</li>
+                <li data-i18n="controls.l2">Edit/remove feedback text before sending.</li>
+                <li data-i18n="controls.l3">Do not use report/feedback features if you do not want any data sent
+                    externally for dictionary improvement and bug fixing.</li>
+                <li data-i18n="controls.l4">Use the Pause switch to stop active correction behavior.</li>
+            </ul>
+        </section>
+    </main>
+    <script src="privacy.js"></script>
+</body>
+
+</html>
