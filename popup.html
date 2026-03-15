@@ -11,38 +11,44 @@
   <div class="popup-container">
     <div class="header">
       <h2>🔤 Layout Detector</h2>
-      <div id="statusIcon" class="status-icon active">●</div>
+      <div class="header-right">
+        <a id="howToUseBtn" class="how-to-use-link" href="#">How to use KLD</a>
+        <a id="privacyBtn" class="how-to-use-link" href="#">Privacy</a>
+        <a id="termsBtn" class="how-to-use-link" href="#">Terms</a>
+        <div id="statusIcon" class="status-icon active">●</div>
+      </div>
     </div>
 
     <div class="instructions">
       <p>📝 <strong>Focus on any text field</strong> and use the buttons below:</p>
+      <p>🔒 Shortcut fixes run locally in your page. Nothing is sent online unless you submit feedback/report.</p>
     </div>
 
     <button id="fixCurrentWord" class="action-btn primary">
       <span class="btn-icon">🎯</span>
       <div class="btn-content">
         <div class="btn-title">Fix Current Word</div>
-        <div class="btn-desc">Fix word at cursor (Ctrl+Q)</div>
+        <div class="btn-desc">Word at cursor — no dictionary check (Ctrl+Q)</div>
       </div>
     </button>
 
     <button id="autoFixAll" class="action-btn secondary">
       <span class="btn-icon">⚡</span>
       <div class="btn-content">
-        <div class="btn-title">Auto-Fix All Words</div>
-        <div class="btn-desc">Epic scan & fix all (Ctrl+Alt)</div>
+        <div class="btn-title">Smart Scan</div>
+        <div class="btn-desc">Dictionary-filtered — only real words (Ctrl+Alt)</div>
       </div>
     </button>
 
     <button id="forceFixAll" class="action-btn force">
       <span class="btn-icon">💪</span>
       <div class="btn-content">
-        <div class="btn-title">Force Fix All Words</div>
-        <div class="btn-desc">Convert entire sentence (Ctrl+Shift+Q)</div>
+        <div class="btn-title">Force Fix All</div>
+        <div class="btn-desc">No dictionary check — converts everything (Ctrl+Shift+Q)</div>
       </div>
     </button>
 
-    <button id="undoBtn" class="action-btn undo" style="display: none;">
+    <button id="undoBtn" class="action-btn undo">
       <span class="btn-icon">↶</span>
       <div class="btn-content">
         <div class="btn-title">Undo Last Change</div>
@@ -57,6 +63,43 @@
       <span class="slider"></span>
       Pause Extension
     </label>
+
+    <div class="divider"></div>
+
+    <div class="feedback-section">
+      <button id="feedbackBtn" class="action-btn feedback">
+        <span class="btn-icon">💬</span>
+        <div class="btn-content">
+          <div class="btn-title">Send Feedback</div>
+          <div class="btn-desc">Help us improve the dictionary</div>
+        </div>
+      </button>
+      <div id="feedbackPanel" class="feedback-panel">
+        <div class="feedback-type-label">What type of feedback?</div>
+        <div id="feedbackTypes" class="feedback-types" role="group" aria-label="Feedback type">
+          <button class="feedback-chip active" data-type="bug" type="button">Bug</button>
+          <button class="feedback-chip" data-type="dictionary" type="button">Wrong word</button>
+          <button class="feedback-chip" data-type="suggestion" type="button">Suggestion</button>
+          <button class="feedback-chip" data-type="ui" type="button">UI/Translation</button>
+        </div>
+        <textarea id="feedbackText" class="feedback-textarea"
+          placeholder="Write a short message (1-2 lines is enough)..."></textarea>
+        <label class="feedback-option">
+          <input id="feedbackConsent" type="checkbox" checked>
+          <span>I agree to send feedback data for debugging and product improvement.</span>
+        </label>
+        <div class="feedback-meta-note">Privacy-first by design: normal correction stays on your device only. Feedback
+          sends only what you type plus minimal context (host, language, OS, version, time) to improve dictionary
+          accuracy and fix reported bugs. No page input text,
+          passwords, or cookies are collected.
+        </div>
+        <div id="feedbackGateNote" class="feedback-gate-note" hidden>
+          Extension is locked until Terms are accepted. Open Terms and accept to continue.
+        </div>
+        <button id="feedbackSubmit" class="feedback-send-btn">✉️ Send</button>
+        <div id="feedbackSuccess" class="feedback-success">✅ Report received successfully!</div>
+      </div>
+    </div>
 
     <div id="status" class="status"></div>
   </div>

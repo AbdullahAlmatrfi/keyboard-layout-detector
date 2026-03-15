@@ -1,128 +1,161 @@
-# 🚀 Keyboard Layout Detector Extension v3.0
+﻿# Keyboard Layout Detector
 
-A revolutionary Chrome extension that automatically detects and corrects keyboard layout mistakes with **epic animations** and **lightning-fast performance**.
+> Instantly fix Arabic ↔ English keyboard layout mistakes in any text field — on any website.
 
-## ✨ New in Version 3.0
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](manifest.json)
+[![Version](https://img.shields.io/badge/version-4.3-orange.svg)](CHANGELOG.md)
 
-### 🎯 **Unified Highlighting System**
-- **ONE beautiful highlight** covering ALL wrong words (no more cluttered individual highlights)
-- **Smart unified label** showing all corrections in a single preview
-- **Epic visual effects** with gradient backgrounds and smooth animations
+---
 
-### ⚡ **70% Performance Boost**
-- **Lightning-fast corrections** - complete process now 70% faster
-- **Optimized animations** with pure CSS (no external dependencies)
-- **Instant feedback** with sub-second response times
+## Overview
 
-### 🎹 **Enhanced Keyboard Shortcuts**
-- **Ctrl+Alt**: Epic Auto-Fix ALL wrong words with unified highlighting
-- **Ctrl+Q**: Fix current word at cursor position
-- **Ctrl+Shift+Q**: Force fix ALL words (bypasses dictionary validation)
-- **Ctrl+Z**: Undo last correction with visual feedback
+Keyboard Layout Detector is a Chrome extension that detects when text was typed in the wrong keyboard language and corrects it with a single shortcut.
 
-### 🎬 **Pure CSS Animation Engine**
-- **No external dependencies** - removed Anime.js for better compatibility
-- **Smooth transitions** with optimized cubic-bezier curves
-- **Hardware acceleration** for buttery smooth performance
+**Example — typed in the wrong layout:**
 
-## 🌟 Features
+| You typed | You meant | After Ctrl+Alt |
+|-----------|-----------|----------------|
+| `hgHv hg;kdr` | `الحب الكثير` | ✅ Fixed |
+| `لاخ هشته فاخق` | `you write your` | ✅ Fixed |
+| `now i am hpf` | `now i am love` | ✅ Partial fix — correct words untouched |
 
-### **Core Functionality**
-- **🔍 Real-time Detection**: Automatically detects wrong keyboard layout while typing
-- **🎯 Epic Progressive Highlighting**: Beautiful unified highlight covering all wrong words
-- **⚡ One-Click Correction**: Instant text replacement with stunning animations
-- **🎨 Visual Feedback**: Gorgeous success animations and notifications
-- **↩️ Smart Undo**: Full correction history with undo capability
+If a word cannot be reliably converted (no dictionary match), it is flagged with an orange box so you can review and report it, rather than silently producing wrong text.
 
-### **Advanced Features**
-- **📱 Popup Controls**: Manual correction triggers and status display
-- **🔧 Debug System**: Comprehensive logging for troubleshooting
-- **🌍 RTL Support**: Perfect right-to-left text handling
-- **🎯 Precise Positioning**: Pixel-perfect highlight placement
-- **💾 Session Memory**: Prevents repeated corrections of same words
+---
 
-### **User Experience**
-- **⚡ Lightning Fast**: 70% faster than previous versions
-- **🎨 Beautiful UI**: Unified highlights with gradient effects
-- **🔄 Smooth Animations**: Epic transitions and transformations
-- **📱 Non-intrusive**: Clean interface that doesn't interfere with work
-- **🎹 Keyboard Friendly**: Powerful shortcuts for power users
+## Features
 
-## 🚀 How It Works
+- **Bidirectional** — Arabic typed in English layout, and English typed in Arabic layout
+- **Smart detection** — only converts words that are genuinely wrong; correct words in a mixed sentence are left untouched
+- **Dictionary-backed** — built-in Arabic and English dictionaries prevent false conversions
+- **Visual scan** — animated sweep shows which words will be changed before applying anything
+- **Unknown word flagging** — orange highlight + floating label for words with no valid conversion
+- **Report system** — submit corrections directly from the flag label to improve the dictionary
+- **One-tap undo** — Ctrl+Z restores the original text at any time after a correction
+---
 
-### **Epic Animation Sequence**
-1. **🔍 Scan Phase**: Epic scanning animation across the text
-2. **🎯 Detection**: Smart analysis finding all wrong words
-3. **✨ Highlighting**: Unified beautiful highlight covering all errors
-4. **⚡ Correction**: Lightning-fast text replacement with success animation
-5. **🧹 Cleanup**: Smooth fadeout and element removal
+## Keyboard Shortcuts
 
-### **Keyboard Shortcuts**
-- **Ctrl+Alt**: Trigger epic auto-fix for all wrong words
-- **Ctrl+Q**: Fix only the current word at cursor
-- **Ctrl+Shift+Q**: Force fix entire sentence (ignores dictionary)
-- **Ctrl+Z**: Undo the last correction
-
-### **Supported Conversions**
-- **Arabic → English**: `hsgdh` → `اهلا` (typed with English keyboard)
-- **English → Arabic**: `اهممخ` → `hello` (typed with Arabic keyboard)
-- **Mixed Text**: Handles multiple wrong words simultaneously
-
-### **Number Handling**
-Numbers are **not** keyboard layout mistakes, so the extension treats them differently:
-
-| Scenario | What happens |
+| Shortcut | Action |
 |---|---|
-| `123` with auto-fix (Ctrl+Alt) | Stays `123` — skipped |
-| `test123` with auto-fix | Letters convert, `123` stays |
-| `0551234567` with auto-fix | Stays unchanged — phone numbers are safe |
-| `123` with manual fix (Ctrl+Q) | Converts to `۱۲۳` — manual conversion always available |
+| `Ctrl + Alt` | Auto-fix all wrong words in the focused field |
+| `Ctrl + Q` | Fix only the word at the current cursor position |
+| `Ctrl + Shift + Q` | **Universal convert** — converts every word regardless of language or dictionary |
+| `Ctrl + Z` | Undo the last correction and restore original text |
 
-> **Note:** Ctrl+Q on the same word works once. This is by design — the extension remembers what it already fixed to avoid repeated corrections.
+> **`Ctrl + Shift + Q` — what it does exactly:**
+> The standard `Ctrl+Alt` scan only converts words it can verify against the built-in Arabic and English dictionaries — words in other languages are skipped to avoid false results. `Ctrl + Shift + Q` removes that filter entirely: it applies the keyboard layout remapping to **every word** in the field, no dictionary check, no language detection. This is designed for users in countries where a third language is involved — for example, someone writing in Farsi, Urdu, or any other language that shares the Arabic script but isn't yet in the dictionary. As the extension expands its language support, this shortcut remains the guaranteed fallback that always works regardless of which language pair is active.
 
-### **Supported Input Fields**
-The extension works on these input types found on web pages:
+---
 
-| Input Type | Supported |
-|---|---|
-| `<input type="text">`      | ✅ |
-| `<input type="search">`    | ✅ |
-| `<input type="email">`     | ✅ |
-| `<input type="tel">`       | ✅ |
-| `<input type="url">`       | ✅ |
-| `<textarea>`               | ✅ |
-| `contentEditable` elements | ✅ |
-| `<input type="password">`  | ✅ |
+## How It Works
 
-> **Note:** The browser's address bar (top URL bar) is not a web page element — no extension can access it due to Chrome security restrictions.
+Pressing `Ctrl+Alt` triggers a four-phase progressive scan:
 
-### **Undo System**
-Every correction can be undone:
+**Phase 1 — Scan animation**
+A sweep plays across the input to signal the scan is running.
 
-| Action | Undo with |
-|---|---|
-| Ctrl+Q (single word fix) | Ctrl+Z — restores original text |
-| Ctrl+Shift+Q (force fix all) | Ctrl+Z — restores original text |
-| Ctrl+Alt (auto-fix all) | Ctrl+Z — restores original text |
-| Multiple fixes in a row | Ctrl+Z multiple times — undoes one at a time (LIFO) |
+**Phase 2 — Analysis**
+Each word is tested against both dictionaries. Words that map to a valid word in the opposite language are queued for conversion. Words whose conversion result is not in any dictionary are flagged as "stuck."
 
-> **Note:** Ctrl+Q now shows a notification if no word is found at the cursor, so you always know what's happening.
+**Phase 3 — Highlights**
+- 🔴 Red box — words that will be auto-converted
+- 🟠 Orange box — words that could not be matched to any dictionary entry
+
+**Phase 4 — Correction**
+Convertible words are replaced in the text. A toast notification previews the conversions (up to 5 per line; tap `+N more` to expand). Stuck words receive a floating label — hover to keep it, click to open the report panel.
+
+---
 
 ## Installation
 
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the extension folder
-5. The extension will be active on all websites
+### From the Chrome Web Store
+*(Link will appear here once published)*
 
-## Files Structure
-npacked" and select the extension folder
-5. The extension will be active on all websites
+### Developer Mode (manual install)
 
-## Files Structure
->>>>>>> ff6ae7410048e47de3b7fea5c6b94c97e403ce57
-Load unpacked" and select the extension folder
-5. The extension will be active on all websites
+1. Clone or download this repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable **Developer mode** (toggle in the top-right corner)
+4. Click **Load unpacked** and select the extension folder
+5. The extension is now active on all websites
 
-## Files Structure
+> Also compatible with Brave, Edge, and any Chromium-based browser.
+
+---
+
+## Supported Input Types
+
+| Element | Supported |
+|---|---|
+| `<input type="text / search / email / tel / url">` | ✅ |
+| `<textarea>` | ✅ |
+| `contenteditable` elements | ✅ |
+| Embedded iframes (Google Docs, Twitter, etc.) | ✅ |
+| Browser address bar | ❌ Browser security restriction |
+
+---
+
+## Number Handling
+
+Numbers are never treated as layout mistakes.
+
+| Input | Ctrl+Alt result |
+|---|---|
+| `123` | Unchanged |
+| `test123` | Letters convert, digits stay |
+| `0551234567` | Unchanged |
+
+Ctrl+Q (manual mode) can still convert digits to Arabic-Indic numerals if needed.
+
+---
+
+## File Structure
+
+```
+keyboard-layout-detector/
+├── manifest.json        # Chrome MV3 manifest
+├── content.js           # Core logic: detection, highlighting, correction, scan
+├── fa-layout.js         # Arabic ↔ English keyboard layout mapping table
+├── styles.css           # All injected UI styles
+├── popup.html           # Extension popup
+├── popup.js             # Popup logic
+├── popup.css            # Popup styles
+├── dict-en.json         # English dictionary
+├── dict-ar.json         # Arabic dictionary
+└── test.html            # Interactive demo page
+```
+
+---
+
+## Contributing
+
+Contributions are welcome — bug reports, dictionary additions, and pull requests alike.
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add your feature'`
+4. Push the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+To report a missing or incorrect dictionary word, use the in-extension report panel (click any orange box after a scan).
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
+---
+
+## Author
+
+**Abdullah Mohammad Almatrfi** — [github.com/AbdullahAlmatrfi](https://github.com/AbdullahAlmatrfi)
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+

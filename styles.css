@@ -29,7 +29,133 @@
   transform: translateY(0) scale(0.98);
 }
 
-/* Auto-Correct Toggle Button */
+/* ─── REPORT PANEL ────────────────────────────────────────────── */
+#kld-report-panel {
+  position: fixed;
+  top: 52px;
+  right: 12px;
+  width: 300px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  padding: 16px 18px 18px;
+  z-index: 2147483647;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+  color: #374151;
+}
+
+.kld-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.kld-report-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #111827;
+}
+
+.kld-report-close {
+  background: #f3f4f6;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.kld-report-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.kld-report-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 10px 0 4px;
+}
+
+.kld-report-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  background: #f9fafb !important;
+  color: #111827 !important;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.kld-report-input:focus {
+  border-color: #667eea;
+  background: #fff;
+}
+
+.kld-report-select {
+  cursor: pointer;
+  appearance: auto;
+  padding-right: 8px;
+}
+
+.kld-report-select option {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.kld-report-hint {
+  font-size: 10.5px;
+  color: #9ca3af;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-style: italic;
+}
+
+.kld-report-submit {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.kld-report-submit:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.kld-report-submit:active {
+  transform: translateY(0);
+}
+
+.kld-report-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .auto-correct-toggle {
   position: fixed;
   background: linear-gradient(135deg, #2ed573 0%, #1abc9c 100%);
@@ -148,13 +274,14 @@
   left: 50%;
   /* overridden by JS */
   width: max-content;
-  max-width: 320px;
+  max-width: 420px;
   height: auto;
   /* never stretch */
   transform: translateX(-50%);
   /* JS also sets this inline — only one transform here */
   padding: 10px 18px;
-  white-space: nowrap;
+  white-space: pre-line;
+  text-align: center;
   border-radius: 10px;
   font-size: 13px;
   font-family: 'Segoe UI', Arial, sans-serif;
@@ -236,6 +363,92 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
   transform: scale(0.8);
+}
+
+/* Correct Word Highlighting — green, shown during Smart Scan */
+.correct-word-highlight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 999993;
+  border-radius: 4px;
+  background: rgba(46, 213, 115, 0.12);
+  border: 2px solid #2ed573;
+  box-shadow: 0 0 12px rgba(46, 213, 115, 0.25);
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+/* Stuck Word Highlighting — orange, stays after corrections */
+.stuck-word-highlight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 999993;
+  border-radius: 4px;
+  background: rgba(255, 167, 38, 0.15);
+  border: 2px solid #ffa726;
+  box-shadow: 0 0 14px rgba(255, 167, 38, 0.35);
+  opacity: 0;
+  transform: scale(0.8);
+  animation: stuckPulse 2s ease-in-out infinite;
+}
+
+@keyframes stuckPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 167, 38, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 22px rgba(255, 167, 38, 0.6);
+  }
+}
+
+/* "Not in dictionary" floating label — clickable, appears above stuck word */
+.kld-not-in-dict-label {
+  position: fixed;
+  z-index: 2147483647;
+  background: linear-gradient(135deg, rgba(255, 172, 28, 0.84) 0%, rgba(255, 88, 28, 0.80) 100%);
+  backdrop-filter: blur(12px) saturate(1.6);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  border: 1px solid rgba(255, 215, 100, 0.32);
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  box-shadow: 0 2px 14px rgba(255, 120, 28, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  user-select: none;
+  animation: dictLabelPop 0.25s ease-out forwards;
+}
+
+.kld-not-in-dict-label:hover {
+  background: linear-gradient(135deg, rgba(255, 185, 50, 0.94) 0%, rgba(255, 100, 40, 0.90) 100%);
+  box-shadow: 0 4px 18px rgba(255, 120, 28, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+.kld-not-in-dict-sub {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.88;
+  margin-top: 1px;
+}
+
+@keyframes dictLabelPop {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.88);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Arabic Wrong Words - Red Theme */

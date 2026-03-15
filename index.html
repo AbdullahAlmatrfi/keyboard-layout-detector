@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Layout Detector — Fix Arabic ↔ English Typos Instantly</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+    <!-- ─── NAV ─── -->
+    <nav>
+        <div class="nav-logo">⌨️ <span>KLD</span> &nbsp;Keyboard Layout Detector</div>
+        <div class="nav-links">
+            <a id="navHowLink" href="#how" data-i18n="nav.how">How It Works</a>
+            <a id="navShortcutsLink" href="#shortcuts" data-i18n="nav.shortcuts">Shortcuts</a>
+            <a id="navPopupLink" href="#popup" data-i18n="nav.popup">Popup</a>
+            <a id="navTryLink" href="#playground" data-i18n="nav.try">Try It</a>
+        </div>
+        <div class="nav-actions">
+            <button id="langToggleBtn" class="lang-toggle-btn" type="button" aria-label="Switch language to Arabic"
+                aria-pressed="false">العربية</button>
+            <a id="navInstallCta" href="#install" class="nav-cta" data-i18n="nav.install">Install Extension</a>
+        </div>
+    </nav>
+
+    <div id="topDemoBanner" class="top-demo-banner" role="note" aria-label="Live usage note"
+        data-i18n-html="banner.top">
+        <strong>Note:</strong> this page is a demo. For real shortcut testing, go to any <strong>www.</strong> website
+        (for example <strong>www.google.com</strong>) and try it in a normal text field.
+    </div>
+
+    <!-- ─── HERO ─── -->
+    <section class="hero">
+        <div id="heroBadge" class="hero-badge" data-i18n="hero.badge">⌨️ Chrome Extension · Arabic ↔ English</div>
+        <h1 id="heroTitle" data-i18n-html="hero.title">Typed in the wrong<br>keyboard layout?</h1>
+        <p id="heroSub" class="hero-sub" data-i18n="hero.sub">One shortcut detects and fixes layout mistakes in any text
+            field on any website
+            — instantly.
+        </p>
+        <div class="hero-actions">
+            <a id="heroInstallBtn" href="#install" class="btn-primary" data-i18n="hero.install">⬇ Install on Chrome</a>
+            <a id="heroDemoBtn" href="#playground" class="btn-ghost" data-i18n="hero.demo">▶ Try the Demo</a>
+        </div>
+        <div id="heroShortcutLine" class="hero-shortcut" data-i18n-html="hero.shortcut">
+            Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> in any text field to fix
+        </div>
+    </section>
+
+    <!-- toolbar screenshot -->
+    <div class="toolbar-ss">
+        <div class="ss-wrap">
+            <img src="screenshots/ss-toolbar.png" alt="Extension icon pinned in the Chrome toolbar" class="ss-real">
+        </div>
+    </div>
+
+    <!-- ─── THE PROBLEM ─── -->
+    <section class="section" id="problem" style="padding-top:40px;">
+        <div class="section-label" data-i18n="problem.label">The Problem</div>
+        <div class="section-title" data-i18n="problem.title">We've all been there</div>
+        <p class="section-sub" data-i18n="problem.sub">You switch tabs, forget to change the keyboard layout, and start
+            typing. By the time you
+            notice, you've written a whole sentence in the wrong language.</p>
+        <div class="problem-grid">
+            <div class="problem-card">
+                <div class="lang-tag" data-i18n="problem.c1.tag">Arabic intended → typed in English layout</div>
+                <div class="wrong">اشقي-صخقنثقس</div>
+                <div class="arrow">↓ Ctrl+Alt</div>
+                <div class="right">hard-workers</div>
+            </div>
+            <div class="problem-card">
+                <div class="lang-tag" data-i18n="problem.c2.tag">English intended → typed in Arabic layout</div>
+                <div class="wrong">لاخ هشته فاخق ضهاف</div>
+                <div class="arrow">↓ Ctrl+Alt</div>
+                <div class="right">you write your what</div>
+            </div>
+            <div class="problem-card">
+                <div class="lang-tag" data-i18n="problem.c3.tag">Mixed sentence — only wrong words fixed</div>
+                <div class="wrong">now i am هى مخرث</div>
+                <div class="arrow">↓ Ctrl+Alt</div>
+                <div class="right">now i am in love </div>
+            </div>
+            <div class="problem-card">
+                <div class="lang-tag" data-i18n="problem.c4.tag">Clean text — nothing changes</div>
+                <div class="wrong" style="color:#94a3b8; background:rgba(148,163,184,0.08);">I love الطبيعة and life
+                </div>
+                <div class="arrow">↓ Ctrl+Alt</div>
+                <div class="right" style="color:#94a3b8; background:rgba(148,163,184,0.08);">I love الطبيعة and life ✅
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── HOW IT WORKS ─── -->
+    <section class="section" id="how">
+        <div class="section-label" data-i18n="how.label">How It Works</div>
+        <div class="section-title" data-i18n="how.title">Four phases, under a second</div>
+        <p class="section-sub" data-i18n="how.sub">Every Ctrl+Alt triggers a four-phase progressive scan with real-time
+            visual feedback.</p>
+        <div class="phases">
+            <div class="phase">
+                <div class="phase-num">1</div>
+                <h3 data-i18n="how.p1.h">Scan</h3>
+                <p data-i18n="how.p1.p">A sweep animation plays across the input field — signals the scan is running.
+                </p>
+            </div>
+            <div class="phase">
+                <div class="phase-num">2</div>
+                <h3 data-i18n="how.p2.h">Analyse</h3>
+                <p data-i18n="how.p2.p">Each word is tested against both Arabic and English dictionaries to find layout
+                    mismatches.</p>
+            </div>
+            <div class="phase">
+                <div class="phase-num">3</div>
+                <h3 data-i18n="how.p3.h">Highlight</h3>
+                <p data-i18n="how.p3.p">🔴 Red box = will be converted. 🟠 Orange box = no dictionary match found.</p>
+            </div>
+            <div class="phase">
+                <div class="phase-num">4</div>
+                <h3 data-i18n="how.p4.h">Correct</h3>
+                <p data-i18n="how.p4.p">Words are replaced in the text. A toast previews all conversions. Undo button
+                    appears.</p>
+            </div>
+        </div>
+
+        <!-- scan red highlight screenshot -->
+        <img src="screenshots/ss-scan-red.png" alt="Red box highlights appearing on wrong words before correction"
+            class="ss-real mt-32">
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── SHORTCUTS ─── -->
+    <section class="section" id="shortcuts">
+        <div id="shortcutsLabel" class="section-label" data-i18n="shortcuts.label">Keyboard Shortcuts</div>
+        <div id="shortcutsTitle" class="section-title" data-i18n="shortcuts.title">Four shortcuts, every scenario
+            covered</div>
+
+        <!-- Ctrl+Alt -->
+        <div class="shortcut-block">
+            <div class="sc-header">
+                <div class="sc-keys"><kbd>Ctrl</kbd><kbd>Alt</kbd></div>
+                <div class="sc-info">
+                    <h3 data-i18n="shortcuts.ctrlAlt.h">Auto-fix all wrong words</h3>
+                    <p data-i18n="shortcuts.ctrlAlt.p">The main shortcut. Scans the entire focused field, highlights all
+                        words typed in the wrong
+                        layout, and converts them in one go. Only words that match a dictionary entry are converted —
+                        correct words in a mixed sentence are untouched.</p>
+                </div>
+            </div>
+            <div class="sc-body">
+                <div class="sc-demo">
+                    <label data-i18n="shortcuts.ctrlAlt.label">Try it — click inside, press Ctrl+Alt</label>
+                    <textarea rows="2" data-fixed="my name is Abdullah">ةغ ىشةث هس شلايعممشا</textarea>
+                    <button class="demo-btn full" data-i18n="shortcuts.ctrlAlt.btn">▶ Try it — Ctrl+Alt works here
+                        too</button>
+                    <div class="hint" data-i18n="shortcuts.ctrlAlt.hint">Expected: my name is Abdullah</div>
+                </div>
+                <img src="screenshots/ss-toast.png" alt="Toast showing conversion preview" class="ss-real">
+            </div>
+            <!-- success + undo screenshot -->
+            <img src="screenshots/ss-success.png" alt="After correction — green success toast and undo button visible"
+                class="ss-real mt-16">
+        </div>
+
+        <!-- Ctrl+Q -->
+        <div class="shortcut-block">
+            <div class="sc-header">
+                <div class="sc-keys"><kbd>Ctrl</kbd><kbd>Q</kbd></div>
+                <div class="sc-info">
+                    <h3 data-i18n="shortcuts.ctrlQ.h">Fix the word at the cursor</h3>
+                    <p data-i18n="shortcuts.ctrlQ.p">Place your cursor inside a single wrong word and press Ctrl+Q. Only
+                        that one word is converted —
+                        the rest of the text is ignored. Useful when you spot one mistake mid-sentence without wanting
+                        to re-scan everything.</p>
+                </div>
+            </div>
+            <div class="sc-body">
+                <div class="sc-demo">
+                    <label data-i18n="shortcuts.ctrlQ.label">Click inside a wrong word, then press Ctrl+Q</label>
+                    <textarea rows="2"
+                        data-fixed="I was excited  to see you today">I was ثءؤهفثي  to see you today</textarea>
+                    <button class="demo-btn full" data-i18n="shortcuts.ctrlQ.btn">▶ Try it — demo converts the whole
+                        field</button>
+                    <div class="hint" data-i18n="shortcuts.ctrlQ.hint">Place cursor inside "ثءؤهفثي " → Ctrl+Q → becomes
+                        "excited"</div>
+                </div>
+                <img src="screenshots/ss-ctrlq.png" alt="Single word corrected by Ctrl+Q" class="ss-real">
+            </div>
+        </div>
+
+        <!-- Ctrl+Shift+Q -->
+        <div class="shortcut-block">
+            <div class="sc-header">
+                <div class="sc-keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Q</kbd></div>
+                <div class="sc-info">
+                    <h3 data-i18n="shortcuts.ctrlShiftQ.h">Universal convert — no language filter</h3>
+                    <p data-i18n="shortcuts.ctrlShiftQ.p">Converts every word in the field regardless of dictionary
+                        results or language detection. Designed
+                        for users writing in languages beyond Arabic and English — Farsi, Urdu, or any other language
+                        that shares the Arabic script but is not yet in the dictionary. As the extension expands its
+                        language support, this shortcut remains the guaranteed fallback.</p>
+                </div>
+            </div>
+            <div class="sc-body">
+                <div class="sc-demo">
+                    <label data-i18n="shortcuts.ctrlShiftQ.label">Try it — forces conversion of everything</label>
+                    <textarea rows="2"
+                        data-fixed="انا طموح لتسهيل حياه الاخرين و بالقدر المستطاع">hkh 'l,p gjsidg pdhi hghovdk , fhgr]v hglsj'hu</textarea>
+                    <button class="demo-btn full" data-i18n="shortcuts.ctrlShiftQ.btn">▶ Try it — converts everything,
+                        no
+                        dictionary</button>
+                    <div class="hint" data-i18n="shortcuts.ctrlShiftQ.hint">No dictionary check — every word remapped
+                    </div>
+                </div>
+                <div style="background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:20px;">
+                    <p style="font-size:13px; color:#64748b; line-height:1.7;">
+                        <strong style="color:#f1f5f9;" data-i18n="shortcuts.ctrlShiftQ.why">Why this
+                            exists:</strong><br>
+                        <code
+                            style="background:#1e293b; padding:2px 7px; border-radius:4px; font-size:12px;">Ctrl+Alt</code>
+                        <span data-i18n="shortcuts.ctrlShiftQ.explain1">only converts words it can verify in the
+                            dictionary — this protects intentional bilingual text</span>
+                        from being changed. <code
+                            style="background:#1e293b; padding:2px 7px; border-radius:4px; font-size:12px;">Ctrl+Shift+Q</code>
+                        <span data-i18n="shortcuts.ctrlShiftQ.explain2">removes that filter entirely, making it the
+                            universal tool for any script-based layout swap.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ctrl+Z -->
+        <div class="shortcut-block">
+            <div class="sc-header">
+                <div class="sc-keys"><kbd>Ctrl</kbd><kbd>Z</kbd></div>
+                <div class="sc-info">
+                    <h3 data-i18n="shortcuts.ctrlZ.h">Undo the last correction</h3>
+                    <p data-i18n="shortcuts.ctrlZ.p">Every correction is saved in a per-session stack. Press Ctrl+Z
+                        immediately after any correction
+                        to restore the original text exactly as it was. Works for all three correction methods. Press
+                        multiple times to undo multiple corrections in reverse order.</p>
+                </div>
+            </div>
+            <div class="sc-body">
+                <div class="sc-demo">
+                    <label data-i18n="shortcuts.ctrlZ.label">Step 1: Fix it → Step 2: Ctrl+Z to undo</label>
+                    <textarea rows="2" data-fixed="i am excited  ">ه شة ثءؤهفثي  </textarea>
+                    <button class="demo-btn full" data-i18n="shortcuts.ctrlZ.btn">▶ Step 1: Fix it — then press Ctrl+Z
+                        to
+                        undo</button>
+                    <div class="hint" data-i18n="shortcuts.ctrlZ.hint">Ctrl+Alt fixes it → Ctrl+Z restores the original
+                    </div>
+                </div>
+                <img src="screenshots/ss-undo.png" alt="Undo button visible after correction" class="ss-real">
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── VISUAL INDICATORS ─── -->
+    <section class="section" id="indicators">
+        <div class="section-label" data-i18n="indicators.label">Visual Feedback</div>
+        <div class="section-title" data-i18n="indicators.title">Everything you see, explained</div>
+        <p class="section-sub" data-i18n="indicators.sub">The extension communicates through four distinct visual
+            elements. Here's what each one
+            means.</p>
+        <div class="indicators-grid">
+            <div class="indicator-card red">
+                <div class="indicator-badge badge-red" data-i18n="indicators.red.badge">🔴 Red Box</div>
+                <h3 data-i18n="indicators.red.h">Word will be converted</h3>
+                <p data-i18n="indicators.red.p">Appears around words the extension has identified as wrong-layout and is
+                    about to convert. Flashes
+                    briefly before disappearing as the correction is applied.</p>
+            </div>
+            <div class="indicator-card orange">
+                <div class="indicator-badge badge-orange" data-i18n="indicators.orange.badge">🟠 Orange Box</div>
+                <h3 data-i18n="indicators.orange.h">No dictionary match</h3>
+                <p data-i18n="indicators.orange.p">The word looks like a layout mistake but its converted form isn't in
+                    any dictionary. The extension
+                    won't guess — it flags it instead. Click the label above it to report the correct form.</p>
+            </div>
+            <div class="indicator-card purple">
+                <div class="indicator-badge badge-purple" data-i18n="indicators.purple.badge">💬 Toast</div>
+                <h3 data-i18n="indicators.purple.h">Conversion preview</h3>
+                <p data-i18n-html="indicators.purple.p">Shows a preview of all conversions: <code
+                        style="background:#1e293b;padding:1px 6px;border-radius:4px;font-size:11px;">→ word · → word</code>.
+                    Tap "+N more" to expand if there are more than 5 words. Disappears on scroll or after 2.5 seconds.
+                </p>
+            </div>
+            <div class="indicator-card green">
+                <div class="indicator-badge badge-green" data-i18n="indicators.green.badge">↩ Undo Button</div>
+                <h3 data-i18n="indicators.green.h">Quick undo access</h3>
+                <p data-i18n="indicators.green.p">Appears in the corner after every successful correction. Click it or
+                    press Ctrl+Z to instantly
+                    restore the original text. Disappears after a few seconds if not used.</p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── ORANGE BOX + REPORT ─── -->
+    <section class="section" id="report">
+        <div class="section-label" data-i18n="report.label">Unknown Words</div>
+        <div class="section-title" data-i18n="report.title">Flag, report, improve</div>
+        <p class="section-sub" data-i18n="report.sub">When a word can't be matched to any dictionary entry, the
+            extension flags it instead of
+            guessing. You can report the correct form to help improve the dictionary for everyone.</p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:start;" class="report-layout">
+            <div>
+                <!-- orange box screenshot -->
+                <img src="screenshots/ss-orange-label.png" alt="Orange box with not in dictionary label"
+                    class="ss-real">
+            </div>
+            <div class="report-steps">
+                <div class="report-step">
+                    <div class="step-num">1</div>
+                    <div>
+                        <h4 data-i18n="report.s1.h">Orange box appears</h4>
+                        <p data-i18n="report.s1.p">The word stays in the text unchanged. An orange border surrounds it
+                            so you can see exactly
+                            which word was flagged.</p>
+                    </div>
+                </div>
+                <div class="report-step">
+                    <div class="step-num">2</div>
+                    <div>
+                        <h4 data-i18n="report.s2.h">Floating label shows</h4>
+                        <p data-i18n="report.s2.p">"⚠ not in dictionary — click to add 👆" appears above the box. Hover
+                            it to keep it visible.
+                            It auto-fades after 3 seconds.</p>
+                    </div>
+                </div>
+                <div class="report-step">
+                    <div class="step-num">3</div>
+                    <div>
+                        <h4 data-i18n="report.s3.h">Click to open report panel</h4>
+                        <p data-i18n="report.s3.p">A panel appears anchored to the field. Type what the word should have
+                            been and submit — your
+                            correction goes directly into the dictionary improvement queue.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- report panel screenshot -->
+        <img src="screenshots/ss-report-panel.png" alt="Report panel open showing the correction input form"
+            class="ss-real mt-32">
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── POPUP ─── -->
+    <section class="section" id="popup">
+        <div class="section-label" data-i18n="popup.label">Extension Popup</div>
+        <div class="section-title" data-i18n="popup.title">Quick access from the toolbar</div>
+        <p class="section-sub" data-i18n="popup.sub">Click the extension icon in your Chrome toolbar to open the popup.
+            It gives you a status
+            overview and a direct feedback channel.</p>
+
+        <div class="popup-layout">
+            <ul class="popup-features">
+                <li>
+                    <div class="feat-icon">📋</div>
+                    <div>
+                        <h4 data-i18n="popup.f1.h">Status display</h4>
+                        <p data-i18n="popup.f1.p">Shows whether the extension is active on the current page.</p>
+                    </div>
+                </li>
+                <li>
+                    <div class="feat-icon">💬</div>
+                    <div>
+                        <h4 data-i18n="popup.f2.h">Send feedback</h4>
+                        <p data-i18n="popup.f2.p">Opens a form to send suggestions, bug reports, or missing word
+                            requests directly to the
+                            developer.</p>
+                    </div>
+                </li>
+                <li>
+                    <div class="feat-icon">⌨️</div>
+                    <div>
+                        <h4 data-i18n="popup.f3.h">Shortcut reference</h4>
+                        <p data-i18n="popup.f3.p">All four shortcuts listed at a glance — no need to remember them all.
+                        </p>
+                    </div>
+                </li>
+            </ul>
+            <!-- popup screenshot -->
+            <img src="screenshots/ss-popup.png" alt="Extension popup open from the Chrome toolbar" class="ss-real">
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── INTERACTIVE PLAYGROUND ─── -->
+    <section class="section" id="playground">
+        <div class="section-label" data-i18n="playground.label">Live Playground</div>
+        <div class="section-title" data-i18n="playground.title">Every scenario, try it yourself</div>
+        <p class="section-sub" data-i18n-html="playground.sub">The extension must be installed and active. Click inside
+            any field below, then press
+            <kbd>Ctrl</kbd>+<kbd>Alt</kbd>.
+        </p>
+
+        <div class="demo-safety-note" role="note" aria-label="Demo limitations and security explanation">
+            <h3 data-i18n="playground.noteTitle">Important: this page is a safe demo environment</h3>
+            <p data-i18n-html="playground.note1">
+                Real auto-correction from the extension content script does not run on this page because it is loaded
+                as <code>chrome-extension://...</code>. Chrome isolates extension pages for security, so content
+                scripts are designed to run on regular websites instead.
+            </p>
+            <p data-i18n-html="playground.note2">
+                The <strong>Fix it</strong> buttons below simulate the same behavior for learning purposes. To use the
+                real shortcuts on live text fields, open any normal website and press
+                <kbd>Ctrl</kbd>+<kbd>Alt</kbd>, <kbd>Ctrl</kbd>+<kbd>Q</kbd>, or
+                <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd>.
+                Go to any <strong>www.</strong> website (for example, <strong>www.google.com</strong>) and try it live
+                there.
+            </p>
+        </div>
+
+        <div class="playground-grid">
+
+            <!-- 1 -->
+            <div class="play-card c-auto">
+                <div class="play-header">
+                    <div class="play-num n-auto">1</div>
+                    <div class="play-info">
+                        <h3>Arabic typed in English keyboard layout</h3>
+                        <p>Full sentence intentionally typed with the wrong layout active.</p>
+                        <span class="play-badge pb-green">✓ Auto-converted to Arabic</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Fix it</button>
+                </div>
+                <textarea rows="2" data-fixed="i love playing football">ه مخرث حمشغهىل بخخفلاشمم </textarea>
+                <div class="play-hint">Expected: i love playing football </div>
+            </div>
+
+            <!-- 2 -->
+            <div class="play-card c-auto">
+                <div class="play-header">
+                    <div class="play-num n-auto">2</div>
+                    <div class="play-info">
+                        <h3>English typed in Arabic keyboard layout</h3>
+                        <p>Same problem, opposite direction.</p>
+                        <span class="play-badge pb-green">✓ Auto-converted to English</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Fix it</button>
+                </div>
+                <textarea rows="2"
+                    data-fixed="لا احب المكوث كثيرا على الاريكه">b hpf hgl;,e ;edvh ugn hghvd;i</textarea>
+                <div class="play-hint">Expected: لا احب المكوث كثيرا على الاريكه (hint:2 words not in Dictionary, orange
+                    box will appear "cklick it👆" )</div>
+            </div>
+
+            <!-- 3 -->
+            <div class="play-card c-auto">
+                <div class="play-header">
+                    <div class="play-num n-auto">3</div>
+                    <div class="play-info">
+                        <h3>Mixed sentence — only wrong words fixed</h3>
+                        <p>Correct English words are untouched. Only the mistyped ones convert.</p>
+                        <span class="play-badge pb-green">✓ Partial conversion</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Fix it</button>
+                </div>
+                <textarea rows="2" data-fixed="now i am ready احب الطعام">now i am ready hpf hg'uhl</textarea>
+                <div class="play-hint">Expected: now i am ready احب الطعام</div>
+            </div>
+
+            <!-- 4 -->
+            <div class="play-card c-stuck">
+                <div class="play-header">
+                    <div class="play-num n-stuck">4</div>
+                    <div class="play-info">
+                        <h3>Words with no dictionary match — orange box</h3>
+                        <p>Some words convert cleanly. Others are flagged because their conversion isn't in any
+                            dictionary.</p>
+                        <span class="play-badge pb-green">✓ Known words converted</span>
+                        <span class="play-badge pb-orange" style="margin-left:6px;">⚠ Unknown words → orange box</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Fix it</button>
+                </div>
+                <textarea rows="2" data-fixed="طعامك كان لذيذ للغايه">'uhl; ;hk g`d` ggyhdi</textarea>
+                <div class="play-hint">'uhl; → "للغايه" → orange box Expected: طعامك كان لذيذ للغايه</div>
+            </div>
+
+            <!-- divider -->
+            <div style="margin:8px 0 4px;">
+                <hr class="divider" style="margin-bottom:10px;">
+                <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#334155;">
+                    🔵 These should not change
+                </div>
+            </div>
+
+            <!-- 5 -->
+            <div class="play-card c-clean">
+                <div class="play-header">
+                    <div class="play-num n-clean">5</div>
+                    <div class="play-info">
+                        <h3>Pure correct English — nothing to fix</h3>
+                        <p>All words are valid English. The extension does nothing.</p>
+                        <span class="play-badge pb-blue">✓ No changes</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Try it</button>
+                </div>
+                <textarea rows="2">now i am ready to publish this on the internet</textarea>
+                <div class="play-hint">Expected: "No wrong words found! Text looks perfect."</div>
+            </div>
+
+            <!-- 6 -->
+            <div class="play-card c-clean">
+                <div class="play-header">
+                    <div class="play-num n-clean">6</div>
+                    <div class="play-info">
+                        <h3>Pure correct Arabic — nothing to fix</h3>
+                        <p>All words are valid Arabic. The extension leaves them alone.</p>
+                        <span class="play-badge pb-blue">✓ No changes</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Try it</button>
+                </div>
+                <textarea rows="2">أنا مستعد لنشر هذا على الإنترنت الآن</textarea>
+                <div class="play-hint">Expected: "No wrong words found! Text looks perfect."</div>
+            </div>
+
+            <!-- 7 -->
+            <div class="play-card c-clean">
+                <div class="play-header">
+                    <div class="play-num n-clean">7</div>
+                    <div class="play-info">
+                        <h3>Intentional bilingual — don't touch it</h3>
+                        <p>Real mixed writing where both languages are intentional. The extension is smart enough to
+                            leave it alone.</p>
+                        <span class="play-badge pb-blue">✓ No changes</span>
+                    </div>
+                </div>
+                <div class="play-label-row">
+                    <span class="play-label">Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd> or</span>
+                    <button class="demo-btn">▶ Try it</button>
+                </div>
+                <textarea rows="2">I love الطبيعة and الحياة is beautiful</textarea>
+                <div class="play-hint">Expected: "No wrong words found! Text looks perfect."</div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ─── INSTALL CTA ─── -->
+    <section class="install-section" id="install">
+        <h2>Start fixing layout mistakes<br>in seconds</h2>
+        <p>Free, open source, no account required.</p>
+        <div class="browser-badges">
+            <div class="browser-badge">🌐 Chrome</div>
+            <div class="browser-badge">🦁 Brave</div>
+            <div class="browser-badge">🔷 Edge</div>
+            <div class="browser-badge">⚙️ Any Chromium browser</div>
+        </div>
+        <div class="hero-actions">
+            <a href="#" class="btn-primary">⬇ Add to Chrome — it's free</a>
+            <a href="https://github.com/AbdullahAlmatrfi/keyboard-layout-detector" target="_blank" class="btn-ghost">★
+                View on GitHub</a>
+        </div>
+        <p class="feedback-cta-help">
+            Need help or want to report feedback? Open the extension popup and tap
+            <a href="#popup" class="feedback-cta-link">Send Feedback</a>.
+        </p>
+    </section>
+
+    <!-- ─── FOOTER ─── -->
+    <footer>
+        Built by <a href="https://github.com/AbdullahAlmatrfi" target="_blank">Abdullah Almatrfi</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/AbdullahAlmatrfi/keyboard-layout-detector" target="_blank">GitHub</a>
+        &nbsp;·&nbsp;
+        <a href="LICENSE" target="_blank">MIT License</a>
+    </footer>
+
+    <script src="vendor/i18next.min.js"></script>
+    <script src="i18n.js"></script>
+    <script src="demo.js"></script>
+
+</body>
+
+</html>

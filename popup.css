@@ -1,3 +1,7 @@
+#undoBtn {
+  display: none;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -18,6 +22,27 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.how-to-use-link {
+  font-size: 11px;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 1px dotted #6366f1;
+  white-space: nowrap;
+}
+
+.how-to-use-link:hover {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
 }
 
 h2 {
@@ -202,4 +227,184 @@ h2 {
   color: #6b7280;
   text-align: center;
   font-style: italic;
+}
+
+/* ─── FEEDBACK SECTION ─────────────────────────────────────── */
+.feedback-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-btn.feedback {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+  margin-bottom: 0;
+}
+
+.action-btn.feedback:hover {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.38);
+}
+
+.feedback-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.32s ease, opacity 0.25s ease;
+  opacity: 0;
+}
+
+.feedback-panel.open {
+  max-height: 330px;
+  opacity: 1;
+  margin-top: 10px;
+}
+
+.feedback-type-label {
+  font-size: 0.78em;
+  color: #6b7280;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.feedback-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.feedback-chip {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.76em;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.feedback-chip:hover {
+  border-color: #06b6d4;
+  color: #0f172a;
+}
+
+.feedback-chip.active {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  border-color: #0891b2;
+  color: #fff;
+}
+
+.feedback-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  height: 72px;
+  padding: 9px 11px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.87em;
+  color: #374151;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #f8fafc;
+}
+
+.feedback-textarea:focus {
+  border-color: #06b6d4;
+  background: #fff;
+}
+
+.feedback-send-btn {
+  margin-top: 7px;
+  width: 100%;
+  padding: 8px;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88em;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.feedback-meta-note {
+  margin-top: 6px;
+  font-size: 0.74em;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.feedback-option {
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.76em;
+  color: #334155;
+  line-height: 1.35;
+}
+
+.feedback-option.optional {
+  color: #475569;
+}
+
+.feedback-option input {
+  margin-top: 1px;
+  accent-color: #0891b2;
+}
+
+.feedback-option.error {
+  color: #b91c1c;
+}
+
+.feedback-gate-note {
+  margin-top: 8px;
+  font-size: 0.76em;
+  line-height: 1.4;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.feedback-send-btn:hover {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  transform: translateY(-1px);
+}
+
+.feedback-success {
+  display: none;
+  margin-top: 8px;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  border-radius: 8px;
+  font-size: 0.88em;
+  font-weight: 600;
+  text-align: center;
+  animation: none;
+}
+
+.feedback-success.show {
+  display: block;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
