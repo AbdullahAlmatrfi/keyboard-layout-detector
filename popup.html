@@ -11,7 +11,10 @@
   <div class="popup-container">
     <div class="header">
       <h2>🔤 Layout Detector</h2>
-      <div id="statusIcon" class="status-icon active">●</div>
+      <div class="header-right">
+        <a id="howToUseBtn" class="how-to-use-link" href="#">How to use KLD</a>
+        <div id="statusIcon" class="status-icon active">●</div>
+      </div>
     </div>
 
     <div class="instructions">
@@ -69,8 +72,16 @@
         </div>
       </button>
       <div id="feedbackPanel" class="feedback-panel">
+        <div class="feedback-type-label">What type of feedback?</div>
+        <div id="feedbackTypes" class="feedback-types" role="group" aria-label="Feedback type">
+          <button class="feedback-chip active" data-type="bug" type="button">Bug</button>
+          <button class="feedback-chip" data-type="dictionary" type="button">Wrong word</button>
+          <button class="feedback-chip" data-type="suggestion" type="button">Suggestion</button>
+          <button class="feedback-chip" data-type="ui" type="button">UI/Translation</button>
+        </div>
         <textarea id="feedbackText" class="feedback-textarea"
-          placeholder="What's on your mind? Share any words, bugs, or ideas..."></textarea>
+          placeholder="Write a short message (1-2 lines is enough)..."></textarea>
+        <div class="feedback-meta-note">Context is auto-added: page, website, extension version, language, and time.</div>
         <button id="feedbackSubmit" class="feedback-send-btn">✉️ Send</button>
         <div id="feedbackSuccess" class="feedback-success">✅ Report received successfully!</div>
       </div>
