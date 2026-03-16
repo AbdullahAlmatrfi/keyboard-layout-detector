@@ -31,7 +31,7 @@
     }
 
     function openHelp() {
-        window.location.href = chrome.runtime.getURL('index.html');
+        window.location.href = chrome.runtime.getURL('src/pages/index.html');
     }
 
     async function renderStatus() {
@@ -62,7 +62,7 @@
     });
 
     privacyBtn.addEventListener('click', function () {
-        chrome.tabs.create({ url: chrome.runtime.getURL('privacy.html') });
+        chrome.tabs.create({ url: chrome.runtime.getURL('src/pages/privacy.html') });
     });
 
     renderStatus();

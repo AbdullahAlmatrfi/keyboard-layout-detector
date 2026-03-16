@@ -85,6 +85,24 @@ Convertible words are replaced in the text. A toast notification previews the co
 
 ---
 
+## Terms and Privacy Flow
+
+The extension now uses a **Terms-first activation flow**:
+
+1. On first install, `src/pages/consent.html` opens automatically.
+2. User must click **Accept Terms** to activate the extension.
+3. After acceptance, the page redirects to `src/pages/index.html` (How-To).
+4. Until accepted, popup actions and keyboard shortcuts are locked.
+5. Feedback/report sending is allowed only after Terms are accepted.
+
+Privacy model summary:
+
+- Normal correction stays local on the device.
+- No page input text is sent during normal typing correction.
+- Data can leave browser only when user explicitly sends feedback/report, to improve dictionary accuracy and fix bugs.
+
+---
+
 ## Supported Input Types
 
 | Element | Supported |
@@ -111,20 +129,50 @@ Ctrl+Q (manual mode) can still convert digits to Arabic-Indic numerals if needed
 
 ---
 
-## File Structure
+## Project Structure
 
 ```
 keyboard-layout-detector/
-├── manifest.json        # Chrome MV3 manifest
-├── content.js           # Core logic: detection, highlighting, correction, scan
-├── fa-layout.js         # Arabic ↔ English keyboard layout mapping table
-├── styles.css           # All injected UI styles
-├── popup.html           # Extension popup
-├── popup.js             # Popup logic
-├── popup.css            # Popup styles
-├── dict-en.json         # English dictionary
-├── dict-ar.json         # Arabic dictionary
-└── test.html            # Interactive demo page
+├── src/
+│   ├── background/
+│   │   └── background.js        # Install/update bootstrap and Terms gate initialization
+│   ├── content/
+│   │   ├── content.js           # Core correction engine and page-level interactions
+│   │   ├── fa-layout.js         # Arabic <-> English keyboard mapping
+│   │   └── styles.css           # Injected content-script UI styles
+│   ├── popup/
+│   │   ├── popup.html           # Extension popup UI
+│   │   ├── popup.css            # Popup styles
+│   │   └── popup.js             # Popup actions, feedback flow, Terms checks
+│   └── pages/
+│       ├── index.html           # How-To / product landing page
+│       ├── index.css            # How-To page styles
+│       ├── consent.html         # Terms of Use acceptance page (first-run gate)
+│       ├── privacy.html         # Privacy policy page
+│       ├── test.html            # Local testing/demo playground
+│       ├── scripts/
+│       │   ├── demo.js          # How-To interactive demo logic
+│       │   ├── i18n.js          # How-To i18n bootstrap
+│       │   ├── consent.js       # Terms acceptance logic and redirect
+│       │   └── privacy.js       # Privacy page EN/AR translations
+│       ├── locales/
+│       │   ├── en.json
+│       │   └── ar.json
+│       └── vendor/
+│           └── i18next.min.js   # Local i18next runtime
+│
+├── data/
+│   ├── dict-en.json             # English dictionary
+│   └── dict-ar.json             # Arabic dictionary
+│
+├── assets/
+│   ├── icons/                   # Extension icons (16/48/128 + brand icon)
+│   └── screenshots/             # README and docs screenshots
+│
+├── manifest.json              # Chrome MV3 manifest
+├── CHANGELOG.md               # Release notes
+├── LICENSE                    # MIT license
+└── README.md
 ```
 
 ---

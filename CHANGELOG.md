@@ -1,3 +1,10 @@
+# v5.1
+
+- Main feature: project structure refactor into modular folders under src, assets, and data.
+- Moved popup, content, pages, and background code into dedicated subfolders for cleaner maintenance.
+- Migrated dictionaries and screenshots/icons into data and assets paths.
+- Updated manifest path wiring to match the new structure.
+
 # 🚀 Keyboard Layout Detector — Enhancement Roadmap
 
 ## Current Score: 16/32 (50%)

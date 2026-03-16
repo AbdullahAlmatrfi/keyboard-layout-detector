@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Keyboard Layout Detector",
-  "version": "4.0",
+  "version": "5.1",
   "description": "Fix Arabic/English keyboard layout mistakes",
   "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
   },
   "content_security_policy": {
     "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://docs.google.com;"
@@ -23,24 +23,24 @@
       "all_frames": true,
       "run_at": "document_start",
       "js": [
-        "fa-layout.js",
-        "content.js"
+        "src/content/fa-layout.js",
+        "src/content/content.js"
       ],
       "css": [
-        "styles.css"
+        "src/content/styles.css"
       ]
     }
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background/background.js"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/popup.html",
     "default_title": "Keyboard Layout Detector",
     "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
     }
   },
   "host_permissions": [
@@ -49,12 +49,12 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "dict-en.json",
-        "dict-ar.json",
-        "index.css",
-        "demo.js",
-        "consent.html",
-        "consent.js"
+        "data/dict-en.json",
+        "data/dict-ar.json",
+        "src/pages/index.css",
+        "src/pages/scripts/demo.js",
+        "src/pages/consent.html",
+        "src/pages/scripts/consent.js"
       ],
       "matches": [
         "<all_urls>"

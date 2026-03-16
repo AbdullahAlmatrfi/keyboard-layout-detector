@@ -148,7 +148,7 @@ async function refreshConsentUiState() {
 }
 
 function openConsentPage() {
-  chrome.tabs.create({ url: chrome.runtime.getURL('consent.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/pages/consent.html') });
 }
 
 function getActiveTabContext() {
@@ -428,13 +428,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
 // How to use KLD link
 document.getElementById('howToUseBtn').addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/pages/index.html') });
 });
 
 if (privacyBtn) {
   privacyBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    chrome.tabs.create({ url: chrome.runtime.getURL('privacy.html') });
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/pages/privacy.html') });
   });
 }
 
