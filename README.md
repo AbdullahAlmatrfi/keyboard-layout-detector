@@ -129,15 +129,33 @@ keyboard-layout-detector/
 
 ---
 
+## Branching Strategy
+
+This project uses a simple, lightweight branching model suited for solo development.
+
+| Branch | Purpose |
+|---|---|
+| `main` | Stable, production-ready code. Always deployable. |
+| `feature/<name>` | New features (e.g. `feature/farsi-support`) |
+| `fix/<name>` | Bug fixes (e.g. `fix/undo-crash`) |
+| `refactor/<name>` | Code restructuring without behavior change |
+| `chore/<name>` | Maintenance tasks (e.g. `chore/update-manifest`) |
+
+**Rules:**
+- All changes go through a PR into `main` — no direct pushes.
+- Branch names must follow the `type/short-description` convention above.
+- Delete branches after they are merged.
+- Keep branches short-lived; one topic per branch.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full workflow details.
+
+---
+
 ## Contributing
 
 Contributions are welcome — bug reports, dictionary additions, and pull requests alike.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'Add your feature'`
-4. Push the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide.
 
 To report a missing or incorrect dictionary word, use the in-extension report panel (click any orange box after a scan).
 
