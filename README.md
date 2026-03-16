@@ -18,7 +18,7 @@ Keyboard Layout Detector is a Chrome extension that detects when text was typed 
 |-----------|-----------|----------------|
 | `hgHv hg;kdr` | `الحب الكثير` | ✅ Fixed |
 | `لاخ هشته فاخق` | `you write your` | ✅ Fixed |
-| `now i am hpf` | `now i am love` | ✅ Partial fix — correct words untouched |
+| `now i am مخرث` | `now i am love` | ✅ Partial fix — correct words untouched |
 
 If a word cannot be reliably converted (no dictionary match), it is flagged with an orange box so you can review and report it, rather than silently producing wrong text.
 
