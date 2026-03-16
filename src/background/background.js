@@ -2,7 +2,7 @@ const CONSENT_VERSION = '2026-03-15-v1';
 
 function openConsentPage() {
     chrome.tabs.create({
-        url: chrome.runtime.getURL('consent.html')
+        url: chrome.runtime.getURL('src/pages/consent.html')
     });
 }
 

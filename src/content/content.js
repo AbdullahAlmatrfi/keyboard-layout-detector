@@ -642,7 +642,7 @@ class ModernLayoutDetector {
     if (!canSend) {
       if (panel) panel.remove();
       this.showNotification('🔒 Local-only mode: accept Terms of Use to send reports.', 'warning', () => {
-        window.open(chrome.runtime.getURL('consent.html'), '_blank');
+        window.open(chrome.runtime.getURL('src/pages/consent.html'), '_blank');
       });
       return;
     }
@@ -700,8 +700,8 @@ class ModernLayoutDetector {
   async loadDictionaries() {
     try {
       const [enRes, arRes] = await Promise.all([
-        fetch(chrome.runtime.getURL('dict-en.json')),
-        fetch(chrome.runtime.getURL('dict-ar.json'))
+        fetch(chrome.runtime.getURL('data/dict-en.json')),
+        fetch(chrome.runtime.getURL('data/dict-ar.json'))
       ]);
       const enWords = await enRes.json();
       const arWords = await arRes.json();
@@ -797,7 +797,7 @@ class ModernLayoutDetector {
         if (now - this._termsToastAt > 2500) {
           this._termsToastAt = now;
           this.showNotification('🔒 Accept Terms of Use to activate keyboard shortcuts.', 'warning', () => {
-            window.open(chrome.runtime.getURL('consent.html'), '_blank');
+            window.open(chrome.runtime.getURL('src/pages/consent.html'), '_blank');
           });
         }
       }
