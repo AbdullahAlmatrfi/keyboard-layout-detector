@@ -129,17 +129,38 @@ keyboard-layout-detector/
 
 ---
 
+## Branching Workflow
+
+This project uses a lightweight trunk-based model:
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Stable, production-ready — **no direct pushes** |
+| `feature/<desc>` | New features |
+| `fix/<desc>` | Bug fixes |
+| `refactor/<desc>` | Refactoring without behavior change |
+| `chore/<desc>` | Tooling, CI, docs |
+| `archive/<name>` | Preserved old branches — never merge or delete |
+
+**Always branch off `main`, keep branches short-lived, and delete them after merging.**
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
+
+---
+
 ## Contributing
 
 Contributions are welcome — bug reports, dictionary additions, and pull requests alike.
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'Add your feature'`
+2. Create a branch from `main`: `git checkout -b feature/your-feature`
+3. Commit with a clear message: `git commit -m 'feat: add your feature'`
 4. Push the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
+5. Open a Pull Request — fill in the [PR template](.github/pull_request_template.md)
 
 To report a missing or incorrect dictionary word, use the in-extension report panel (click any orange box after a scan).
+
+For detailed contribution guidelines, commit conventions, and the full branching strategy, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
