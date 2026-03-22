@@ -132,7 +132,7 @@
     "report": {
         "label": "Unknown Words",
         "title": "Flag, report, improve",
-        "sub": "When a word can't be matched to any dictionary entry, the extension flags it instead of guessing. You can report the correct form to help improve the dictionary for everyone.",
+        "sub": "When a word can't be matched to any dictionary entry, the extension flags it instead of guessing. Open Quick Word Fix, pick Yes/No per row, then apply only what you selected.",
         "s1": {
             "h": "Orange box appears",
             "p": "The word stays in the text unchanged. An orange border surrounds it so you can see exactly which word was flagged."
@@ -143,7 +143,7 @@
         },
         "s3": {
             "h": "Click to open report panel",
-            "p": "A panel appears anchored to the field. Type what the word should have been and submit — your correction goes directly into the dictionary improvement queue."
+            "p": "A simple table opens. For each row, write the correct word and set Change = Yes or No. On submit, only rows set to Yes are changed and sent for improvement."
         }
     },
     "popup": {

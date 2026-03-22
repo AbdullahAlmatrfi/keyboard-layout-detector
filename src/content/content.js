@@ -513,81 +513,163 @@ class ModernLayoutDetector {
     header.className = 'kld-report-header';
     const title = document.createElement('div');
     title.className = 'kld-report-title';
-    title.textContent = '📝 Report missing word';
+    title.textContent = 'Fix Words';
+    const subtitle = document.createElement('div');
+    subtitle.className = 'kld-report-subtitle';
+    subtitle.textContent = 'Choose and apply.';
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'kld-report-title-wrap';
+    titleWrap.appendChild(title);
+    titleWrap.appendChild(subtitle);
     const closeBtn = document.createElement('button');
     closeBtn.className = 'kld-report-close';
     closeBtn.textContent = '×';
     closeBtn.addEventListener('click', () => panel.remove());
-    header.appendChild(title);
+    header.appendChild(titleWrap);
     header.appendChild(closeBtn);
 
-    // Wrong word — text field for one word, dropdown for multiple
-    const wrongLabel = document.createElement('div');
-    wrongLabel.className = 'kld-report-label';
-    wrongLabel.textContent = 'Wrong word typed:';
-
-    // Per-word correction map: original → correction (pre-filled with computed conversion)
+    // Per-word maps
     const corrections = Object.fromEntries(words.map(w => [w.original, w.converted || '']));
+    const replaceSelection = Object.fromEntries(words.map(w => [w.original, 'n']));
+    const inputByWord = {};
 
-    let wrongWordEl;
-    if (words.length === 1) {
-      wrongWordEl = document.createElement('input');
-      wrongWordEl.className = 'kld-report-input';
-      wrongWordEl.type = 'text';
-      wrongWordEl.value = words[0].original;
-      wrongWordEl.readOnly = true;
-    } else {
-      wrongWordEl = document.createElement('select');
-      wrongWordEl.className = 'kld-report-input kld-report-select';
-      words.forEach(w => {
-        const opt = document.createElement('option');
-        opt.value = w.original;
-        opt.textContent = w.original;
-        wrongWordEl.appendChild(opt);
+    const note = document.createElement('div');
+    note.className = 'kld-report-hint';
+    note.textContent = 'Yes = change, No = keep.';
+
+    const actions = document.createElement('div');
+    actions.className = 'kld-report-actions';
+
+    const selectAllYesBtn = document.createElement('button');
+    selectAllYesBtn.type = 'button';
+    selectAllYesBtn.className = 'kld-report-mini-btn';
+    selectAllYesBtn.textContent = 'All Yes';
+
+    const selectAllNoBtn = document.createElement('button');
+    selectAllNoBtn.type = 'button';
+    selectAllNoBtn.className = 'kld-report-mini-btn';
+    selectAllNoBtn.textContent = 'All No';
+
+    const summary = document.createElement('div');
+    summary.className = 'kld-report-summary';
+
+    actions.appendChild(selectAllYesBtn);
+    actions.appendChild(selectAllNoBtn);
+    actions.appendChild(summary);
+
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'kld-report-table-wrap';
+
+    const table = document.createElement('table');
+    table.className = 'kld-report-table';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    ['Typed', 'Correct', 'Change'].forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+
+    const tbody = document.createElement('tbody');
+    words.forEach((w) => {
+      const row = document.createElement('tr');
+
+      const wrongTd = document.createElement('td');
+      const wrongWord = document.createElement('div');
+      wrongWord.className = 'kld-report-word';
+      wrongWord.textContent = w.original;
+      wrongTd.appendChild(wrongWord);
+
+      const shouldTd = document.createElement('td');
+      const shouldInput = document.createElement('input');
+      shouldInput.className = 'kld-report-input kld-report-table-input';
+      shouldInput.type = 'text';
+      shouldInput.placeholder = 'Correct word';
+      shouldInput.value = w.converted || '';
+      shouldInput.addEventListener('input', () => {
+        corrections[w.original] = shouldInput.value;
+        shouldInput.style.border = '';
       });
-    }
+      inputByWord[w.original] = shouldInput;
+      shouldTd.appendChild(shouldInput);
 
-    // Correct word input — pre-filled with the computed conversion
-    const correctLabel = document.createElement('div');
-    correctLabel.className = 'kld-report-label';
-    correctLabel.textContent = words.length === 1 ? 'Should be:' : `Should be: (word 1 of ${words.length})`;
-    const correctInput = document.createElement('input');
-    correctInput.className = 'kld-report-input';
-    correctInput.type = 'text';
-    correctInput.placeholder = 'Confirm or edit the correct word…';
-    correctInput.value = words[0].converted || '';
-
-    // Small hint under the pre-filled suggestion
-    const hint = document.createElement('div');
-    hint.className = 'kld-report-hint';
-    hint.textContent = 'Is this correct? Edit if needed.';
-    // When dropdown changes: save current correction, load stored one for new selection
-    if (words.length > 1) {
-      let lastSelected = words[0].original;
-      wrongWordEl.addEventListener('change', () => {
-        corrections[lastSelected] = correctInput.value;
-        lastSelected = wrongWordEl.value;
-        correctInput.value = corrections[lastSelected] || '';
-        const idx = wrongWordEl.selectedIndex + 1;
-        correctLabel.textContent = `Should be: (word ${idx} of ${words.length})`;
-        correctInput.style.border = '';
-        correctInput.focus();
+      const replaceTd = document.createElement('td');
+      const replaceSelect = document.createElement('select');
+      replaceSelect.className = 'kld-report-input kld-report-select kld-report-table-select';
+      const noOpt = document.createElement('option');
+      noOpt.value = 'n';
+      noOpt.textContent = 'No';
+      const yesOpt = document.createElement('option');
+      yesOpt.value = 'y';
+      yesOpt.textContent = 'Yes';
+      replaceSelect.appendChild(noOpt);
+      replaceSelect.appendChild(yesOpt);
+      replaceSelect.addEventListener('change', () => {
+        replaceSelection[w.original] = replaceSelect.value;
+        updateSummary();
       });
-    }
+      replaceTd.appendChild(replaceSelect);
 
-    // Submit button — sends ALL filled corrections at once
+      row.appendChild(wrongTd);
+      row.appendChild(shouldTd);
+      row.appendChild(replaceTd);
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+
+    const updateSummary = () => {
+      const picked = words.filter(w => replaceSelection[w.original] === 'y').length;
+      summary.textContent = `${picked} selected`;
+    };
+
+    selectAllYesBtn.addEventListener('click', () => {
+      tbody.querySelectorAll('select.kld-report-table-select').forEach((selectEl) => {
+        selectEl.value = 'y';
+      });
+      words.forEach(w => { replaceSelection[w.original] = 'y'; });
+      updateSummary();
+    });
+
+    selectAllNoBtn.addEventListener('click', () => {
+      tbody.querySelectorAll('select.kld-report-table-select').forEach((selectEl) => {
+        selectEl.value = 'n';
+      });
+      words.forEach(w => { replaceSelection[w.original] = 'n'; });
+      updateSummary();
+    });
+
+    updateSummary();
+
+    // Submit button — sends and applies only selected (Y) rows
     const submitBtn = document.createElement('button');
     submitBtn.className = 'kld-report-submit';
-    submitBtn.textContent = '📤 Submit';
+    submitBtn.textContent = 'Apply';
     submitBtn.addEventListener('click', async () => {
-      corrections[wrongWordEl.value] = correctInput.value;
+      const pairs = words
+        .filter(w => replaceSelection[w.original] === 'y')
+        .map(w => ({ wrong: w.original, correct: (corrections[w.original] || '').trim() }));
 
-      const pairs = words.map(w => ({ wrong: w.original, correct: corrections[w.original].trim() })).filter(p => p.correct);
       if (!pairs.length) {
-        correctInput.style.border = '1.5px solid #ef4444';
-        correctInput.focus();
+        this.showNotification('⚠ Select at least one Yes row.', 'warning');
         return;
       }
+
+      const emptyPair = pairs.find(p => !p.correct);
+      if (emptyPair) {
+        const badInput = inputByWord[emptyPair.wrong];
+        if (badInput) {
+          badInput.style.border = '1.5px solid #ef4444';
+          badInput.focus();
+        }
+        this.showNotification(`⚠ Fill Correct for "${emptyPair.wrong}".`, 'warning');
+        return;
+      }
+
       submitBtn.textContent = '⏳ Sending…';
       submitBtn.disabled = true;
       for (const { wrong, correct } of pairs) {
@@ -603,20 +685,15 @@ class ModernLayoutDetector {
       }
       panel.remove();
       this.showNotification(
-        pairs.length === 1 ? '✅ Reported & converted! Thank you 🙏' : `✅ ${pairs.length} words reported & converted! Thank you 🙏`,
+        pairs.length === 1 ? '✅ Submitted and replaced 1 selected word.' : `✅ Submitted and replaced ${pairs.length} selected words.`,
         'success'
       );
     });
-    correctInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitBtn.click();
-    });
 
     panel.appendChild(header);
-    panel.appendChild(wrongLabel);
-    panel.appendChild(wrongWordEl);
-    panel.appendChild(correctLabel);
-    panel.appendChild(correctInput);
-    panel.appendChild(hint);
+    panel.appendChild(note);
+    panel.appendChild(actions);
+    panel.appendChild(tableWrap);
     panel.appendChild(submitBtn);
     (document.body || document.documentElement).appendChild(panel);
 
@@ -634,7 +711,8 @@ class ModernLayoutDetector {
       panel.style.transform = 'translateY(0)';
     });
 
-    correctInput.focus();
+    const firstInput = table.querySelector('input.kld-report-table-input');
+    if (firstInput) firstInput.focus();
   }
 
   async submitReport(wrongWord, correctWord, panel) {
