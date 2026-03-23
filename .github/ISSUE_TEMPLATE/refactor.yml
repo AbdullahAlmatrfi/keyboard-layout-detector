@@ -1,0 +1,59 @@
+name: "Refactor Task"
+description: "Propose a focused code or structure improvement that does not change observable behavior."
+labels: ["refactor"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for structural cleanup tasks. Keep each issue small and scoped to one change at a time.
+
+  - type: input
+    id: area
+    attributes:
+      label: "Area / File(s)"
+      description: "Which file(s) or part of the codebase does this refactor touch?"
+      placeholder: "e.g. content.js — word-detection section"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "What is the current problem?"
+      description: "Describe the structural issue, code smell, or organizational problem."
+      placeholder: "e.g. All detection logic, UI handling, and dictionary lookup are mixed in a single 1000-line function."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed change"
+      description: "Describe the refactor. Be specific about what moves, what gets renamed, or what gets extracted."
+      placeholder: "e.g. Extract detectWord() into its own module (src/core/detector.js) with no UI dependencies."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Acceptance criteria"
+      description: "How will you verify the refactor is complete and nothing is broken?"
+      placeholder: |
+        - [ ] Extension loads without errors
+        - [ ] Ctrl+Alt correction still works end-to-end
+        - [ ] No behavior change visible to the user
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: "Safety checks"
+      options:
+        - label: "This refactor does NOT change observable user-facing behavior"
+          required: true
+        - label: "This issue covers only ONE focused change (not a broad rewrite)"
+          required: true
+        - label: "I will open a `refactor/<name>` branch for this work"
+          required: true
