@@ -8,6 +8,7 @@
         en: {
             title: 'Keyboard Layout Detector Privacy and Data Use',
             lastUpdated: 'Last updated:',
+            intro: 'This page explains what runs locally, what data is sent only when you choose to submit feedback or reports, and how you stay in control.',
             'short.title': 'Short answer',
             'short.localOnly': 'Using shortcuts (Ctrl+Q, Ctrl+Alt, Ctrl+Shift+Q, Ctrl+Z) edits text locally in your own page only.',
             'short.noServer': 'No text is sent to servers during normal fixing.',
@@ -75,6 +76,7 @@
         ar: {
             title: 'الخصوصية واستخدام البيانات في Keyboard Layout Detector',
             lastUpdated: 'آخر تحديث:',
+            intro: 'توضح هذه الصفحة ما يعمل محليًا، وما البيانات التي تُرسل فقط عند اختيارك إرسال الملاحظات أو البلاغات، وكيف تبقى أنت المتحكم.',
             'short.title': 'الخلاصة السريعة',
             'short.localOnly': 'استخدام الاختصارات (Ctrl+Q و Ctrl+Alt و Ctrl+Shift+Q و Ctrl+Z) يعدل النص محليا داخل صفحتك فقط.',
             'short.noServer': 'لا يتم إرسال النص إلى أي خادم أثناء التصحيح العادي.',
