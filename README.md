@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](manifest.json)
-[![Version](https://img.shields.io/badge/version-4.3-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-5.1-orange.svg)](CHANGELOG.md)
 
 ---
 

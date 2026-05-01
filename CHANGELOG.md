@@ -143,10 +143,10 @@ CHANGE in content.js (one line):
 | Phase 3 | Architecture fixes | 32/32 | 100% |
 
 
-- L30/L31/ reveiw
-- fix the shortcut when clikcing it in arbic it didnt work✅
-- change the places of the notaification msg
-- try to make the porcess of convrtion a bit faster (how can i compare the diff's btw the first version and the latest one (v3), in presentage %) 
-- while i was typing in teams in a chat box spacificly, i used the extention and the notifications was says the word detected and corrected, but the words      didn't get converted?? - here is the element 
+- L30/L31/ review
+- fix the shortcut when clicking it in Arabic it didn't work✅
+- change the places of the notification message
+- try to make the process of conversion a bit faster (how can I compare the differences between the first version and the latest one (v3), in percentage %)
+- while I was typing in Teams in a chat box specifically, I used the extension and the notification was saying the word detected and corrected, but the words didn't get converted?? - here is the element 
 
     <div id="new-message-3f3d693a-4b56-46c5-a407-4041ba2f9873" placeholder="Type a message" tabindex="0" data-tid="ckeditor" data-is-focusable="true" data-shortcut-context="compose-field" class="fui-Primitive ___1czdayc f1poobt0 f1cktdmf f13htf1t f1ubnyt4 f1couhl3 f1ahpp82 f11qra4b f6dzj5z f1p9o1ba fokg9q4 ck ck-content ck-editor__editable ck-rounded-corners ck-editor__editable_inline ck-blurred" lang="en" dir="ltr" role="textbox" contenteditable="true" data-tabster="{&quot;focusable&quot;:{&quot;isDefault&quot;:true}, &quot;observed&quot;:{&quot;names&quot;:[&quot;chat-input&quot;]}}" style="overflow:hidden;" spellcheck="false" aria-label="Type a message"><p data-placeholder="Type a message">sbl ugd;l</p></div>
